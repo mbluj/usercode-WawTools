@@ -358,7 +358,6 @@ namespace WawGenInfoHelper {
     return met;
   }
 
-
   //////////////
   const reco::GenParticleRef getLeadChParticle(const reco::GenParticleRefVector& products){
     
@@ -381,7 +380,76 @@ namespace WawGenInfoHelper {
     }
     return part;
   }
-//////////////
+  //////////////
+    TLorentzVector getP4(const reco::GenParticleRef& part){
+    return TLorentzVector(part->px(),part->py(),part->pz(),part->energy());
+  }
+  //////////////
+  TLorentzVector getP4(const reco::GenParticle&  part){
+    return TLorentzVector(part.px(),part.py(),part.pz(),part.energy());
+  }
+  //////////////
+  void setP4Ptr(const TLorentzVector& p4, TLorentzVector *p4Ptr){
+    if(p4Ptr) p4Ptr->SetPxPyPzE(p4.Px(),p4.Py(),p4.Pz(),p4.Energy());
+    else p4Ptr = new TLorentzVector(p4);
+  }
+  //////////////
+  void setV3Ptr(const TVector3& v3, TVector3 *v3Ptr){
+    if(v3Ptr) v3Ptr->SetXYZ(v3.X(),v3.Y(),v3.Z());
+    else v3Ptr = new TVector3(v3);
+  }
+  //////////////
+  TLorentzVector getCombinedP4(const reco::GenParticleRefVector& products){    
+    TLorentzVector p4;
+    for(IGR id=products.begin(); id!=products.end(); ++id)
+      p4 += getP4( *id );
+    return p4;
+  }
+  //////////////
+  TLorentzVector getLeadChParticleP4(const reco::GenParticleRefVector& products){
+    return getP4( getLeadChParticle(products) );
+  }
+  //////////////
+  TVector3 getVertex(const reco::GenParticleRef& part){
+    return TVector3(part->vx(),part->vy(),part->vz());
+  }
+  //////////////
+  void getVertex(const reco::GenParticleRef& part, TVector3 *vtx){
+    setV3Ptr(getVertex(part),vtx);
+  }
+  //////////////
+  TVector3 impactParameter(const TVector3& pv, const TVector3& sv, const TLorentzVector& p4){
+    TVector3 dir = (p4.Vect()).Unit();
+    return (sv-pv) - ((sv-pv)*dir)*dir;
+}
+  //////////////
+  void impactParameter(const TVector3& pv, const TVector3& sv, const TLorentzVector& p4,
+		       TVector3 *ip){
+    setV3Ptr(impactParameter(pv,sv,p4),ip);
+  }
+  //////////////
+  std::pair<float,float> angleBetweenPlanes(const TLorentzVector &prod1, 
+					    const TLorentzVector &prod12,
+					    const TLorentzVector &prod2, 
+					    const TLorentzVector &prod22){
+    //Boost to correct frame
+    TVector3 boost = (prod1+prod2).BoostVector();
+    TLorentzVector prod1Star = prod1; prod1Star.Boost(-boost);
+    TLorentzVector prod12Star = prod12; prod12Star.Boost(-boost);
+    TLorentzVector prod2Star = prod2; prod2Star.Boost(-boost);
+    TLorentzVector prod22Star = prod22; prod22Star.Boost(-boost);
+    
+    //define common direction and normal vectors to decay planes
+    TVector3 direction = prod1Star.Vect().Unit();
+    TVector3 n1 = ( direction.Cross( prod12Star.Vect() ) ).Unit(); 
+    TVector3 n2 = ( direction.Cross( prod22Star.Vect() ) ).Unit(); 
+    
+    float phi=TMath::ACos(n1*n2);
+    float rho=TMath::ACos( (prod12Star.Vect().Unit() )*(prod22Star.Vect().Unit() ) );
+
+    return std::make_pair(phi,rho);
+  }
+  //////////////
   //copy of function from PhysicsTools/HepMCCandAlgos/interface/GenParticlesHelper.h" which allows ignore pdgId
   void findParticles(const reco::GenParticleCollection& sourceParticles, 
 		     reco::GenParticleRefVector& particleRefs, 
