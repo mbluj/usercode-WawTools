@@ -61,5 +61,5 @@ process.p = cms.Path(
 
 process.TFileService = cms.Service(
     "TFileService", 
-    fileName = cms.string("genTauTauAna.root") 
+    fileName = cms.string("vtxAna.root") 
 )
