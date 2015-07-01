@@ -191,7 +191,7 @@ void MiniAODVertexAnalyzer::analyze(const edm::Event & iEvent, const edm::EventS
       iPfVtx=i;
     }
   }
-  aodPV_->SetXYZ((*vertices)[iPfVtx].x(),(*vertices)[iPfVtx].y(),(*vertices)[iPfVtx].z());
+  pfPV_->SetXYZ((*vertices)[iPfVtx].x(),(*vertices)[iPfVtx].y(),(*vertices)[iPfVtx].z());
   if(verbose_ && iPfVtx!=0){
     reco::VertexRef vtxPrt0(vertices,0);
     std::cout<<"PF-sorting gives different result that sorting from AOD: "<<std::endl
