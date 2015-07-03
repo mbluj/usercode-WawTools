@@ -26,6 +26,7 @@
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "TTree.h"
 #include "TLorentzVector.h"
@@ -49,7 +50,9 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     edm::EDGetTokenT<edm::View<pat::PackedCandidate> >  cands_;
     edm::EDGetTokenT<reco::GenParticleCollection> genCands_;
     edm::EDGetTokenT<reco::VertexCollection> vertices_;
+    edm::EDGetTokenT<reco::BeamSpot> bs_;
     //int threshold_;
+    bool useBeamSpot_;
     bool verbose_;
 
     //std::map<std::string, float> treeVars_;      
@@ -57,13 +60,14 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
 
     float run_, lumi_, event_;
     int bosonId_, decModeMinus_, decModePlus_;
+    int ipfPV_, ioldPV_, refit_;
 
     TLorentzVector *p4Sum_;
     TLorentzVector *piMinus_, *piPlus_;
     TLorentzVector *tauMinus_, *tauPlus_;
     TLorentzVector *visTauMinus_, *visTauPlus_;
 
-    TVector3 *genPV_, *aodPV_, *pfPV_, *oldPV_;
+    TVector3 *genPV_, *aodPV_, *pfPV_, *oldPV_, *rePfPV_;
     TVector3 *svMinus_, *svPlus_;
 };
 

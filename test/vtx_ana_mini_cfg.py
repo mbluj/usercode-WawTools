@@ -8,6 +8,15 @@ process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(True),
 )
 
+
+process.load("Configuration.Geometry.GeometryRecoDB_cff")
+process.load("Configuration.StandardSequences.MagneticField_38T_PostLS1_cff")
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
+process.GlobalTag.globaltag = 'MCRUN2_74_V9' #as MiniAOD
+
+process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
+
+
 process.maxEvents = cms.untracked.PSet( 
     input = cms.untracked.int32(-1) 
 )
@@ -15,6 +24,7 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
 	"root://cms-xrd-global.cern.ch//store/mc/RunIISpring15DR74/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/10000/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
+	#"root://cmsxrootd.gridka.de//store/mc/RunIISpring15DR74/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/10000/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
 	)
 )
 
@@ -50,6 +60,8 @@ process.vtxAna = cms.EDAnalyzer(
     #pruned = cms.InputTag("genParticles"),
     vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
     vertexScores = cms.InputTag("offlineSlimmedPrimaryVertices"),
+    beamSpot = cms.InputTag("offlineBeamSpot"),
+    useBeamSpot = cms.bool(True),
 
     verbose = cms.untracked.bool(False),
 )

@@ -11,9 +11,15 @@
   <use   name="DataFormats/Common"/>
   <use   name="DataFormats/PatCandidates"/>
   <use   name="DataFormats/HepMCCandidate"/>
+  <use   name="DataFormats/VertexReco"/>
+  <use   name="DataFormats/BeamSpot"/>
   <use   name="Utilities/General"/>
   <use   name="PhysicsTools/UtilAlgos"/>
   <use   name="PhysicsTools/HepMCCandAlgos"/>
+  <use   name="TrackingTools/TransientTrack"/>
+  <use   name="TrackingTools/Records"/>
+  <use   name="RecoVertex/VertexPrimitives"/>
+  <use   name="RecoVertex/AdaptiveVertexFit"/>
   <use   name="WarsawAnalysis/HTT"/>
   <use   name="root"/>
 </library>
