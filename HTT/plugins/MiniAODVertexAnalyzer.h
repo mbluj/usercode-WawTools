@@ -5,7 +5,6 @@
 // system include files
 #include <memory>
 #include <cmath>
-
 //
 #include <vector>
 #include <string>
@@ -15,7 +14,6 @@
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
-
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -27,6 +25,8 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
+
+#include "WarsawAnalysis/HTTDataFormats/interface/HTTEvent.h"
 
 #include "TTree.h"
 #include "TLorentzVector.h"
@@ -42,6 +42,24 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     ~MiniAODVertexAnalyzer();
 
   private:
+
+    ///Fill branches with generator level data.
+    bool getGenData(const edm::Event & iEvent, const edm::EventSetup & iSetup);
+
+    ///Fill branches with reconstruction level data.
+    bool getRecoData(const edm::Event & iEvent, const edm::EventSetup & iSetup);
+
+    ///Find PV using different discriminators. Return false
+    ///if no vertices were found in the event
+    ///pfPV  - using PF particles for score calulation
+    ///pt2PV - using sum pt^2 os all tracks assigned to vertex.
+    ///        as tracks pt<1 do not have errors, we take
+    ///        estimate based on TRK-11-001 note    
+    bool findPrimaryVertices(const edm::Event & iEvent, const edm::EventSetup & iSetup);
+
+    //Refit PV using track information stored in miniAOD
+    bool refitPV(const edm::Event & iEvent, const edm::EventSetup & iSetup);
+   
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
@@ -58,18 +76,10 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     //std::map<std::string, float> treeVars_;      
     TTree *tree_;
 
-    float run_, lumi_, event_;
-    int bosonId_, decModeMinus_, decModePlus_;
-    int ipfPV_, ioldPV_, refit_;
-
-    TLorentzVector *p4Sum_;
-    TLorentzVector *piMinus_, *piPlus_;
-    TLorentzVector *tauMinus_, *tauPlus_;
-    TLorentzVector *visTauMinus_, *visTauPlus_;
-
-    TVector3 *genPV_, *aodPV_, *pfPV_, *oldPV_, *rePfPV_;
-    TVector3 *svMinus_, *svPlus_;
+    HTTEvent *myEvent_;
+       
 };
 
 #endif
 
+  

@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process("ANA")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1000)
+process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(10000)
 process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(True),
 )
@@ -12,7 +12,9 @@ process.options = cms.untracked.PSet(
 process.load("Configuration.Geometry.GeometryRecoDB_cff")
 process.load("Configuration.StandardSequences.MagneticField_38T_PostLS1_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-process.GlobalTag.globaltag = 'MCRUN2_74_V9' #as MiniAOD
+from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
+#process.GlobalTag.globaltag = 'MCRUN2_71_V1' #as MiniAOD
 
 process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 
@@ -23,8 +25,9 @@ process.maxEvents = cms.untracked.PSet(
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-	"root://cms-xrd-global.cern.ch//store/mc/RunIISpring15DR74/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/10000/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
-	#"root://cmsxrootd.gridka.de//store/mc/RunIISpring15DR74/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/10000/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
+	#"file:/home/akalinow/scratch/CMS/HiggsCP/Data/SUSYGluGluH0ToTauTau_M-125_TuneCUETP8M1_13TeV_pythia8_GEN_RunIIWinter15GS-MCRUN2_71_V1-v2/C871A0B-3303-E511-B8D0-0025B3E05D74.root"
+        "file:/home/akalinow/scratch/CMS/HiggsCP/Data/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
+        #"root://cms-xrd-global.cern.ch//store/mc/RunIISpring15DR74/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/10000/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
 	)
 )
 
@@ -62,12 +65,11 @@ process.vtxAna = cms.EDAnalyzer(
     vertexScores = cms.InputTag("offlineSlimmedPrimaryVertices"),
     beamSpot = cms.InputTag("offlineBeamSpot"),
     useBeamSpot = cms.bool(True),
-
     verbose = cms.untracked.bool(False),
 )
 
 process.p = cms.Path(
-    #process.printTree
+    process.printTree+
     process.vtxAna
 )
 

@@ -69,7 +69,7 @@ MiniAODGenTauTauAnalyzer::MiniAODGenTauTauAnalyzer(const edm::ParameterSet& iCon
   nPiMinus_ = new TVector3();
   tree_->Branch("nPiMinus.","TVector3",nPiMinus_);
   nPiPlus_ = new TVector3();
-  tree_->Branch("nPiPlus.","TVector3",nPiPlus_);
+  tree_->Branch("nPiPlus","TVector3",nPiPlus_);
 
 }
 
@@ -328,7 +328,5 @@ void MiniAODGenTauTauAnalyzer::clean(){
   return;
 }
 
-// Define plugin
-#include "FWCore/Framework/interface/MakerMacros.h"
-DEFINE_FWK_MODULE(MiniAODGenTauTauAnalyzer);
+
 
