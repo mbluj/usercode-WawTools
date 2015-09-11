@@ -1,0 +1,28 @@
+<library   name="WarsawAnalysisHTTPlugins" file="*.cc">
+  <use   name="FWCore/Framework"/>
+  <use   name="FWCore/MessageLogger"/>
+  <use   name="FWCore/ParameterSet"/>
+  <use   name="FWCore/PluginManager"/>
+  <use   name="FWCore/ServiceRegistry"/>
+  <use   name="FWCore/Utilities"/>
+  <use   name="DataFormats/Math"/>
+  <use   name="DataFormats/L1Trigger"/>
+  <use   name="FWCore/Common"/>
+  <use   name="DataFormats/Common"/>
+  <use   name="DataFormats/PatCandidates"/>
+  <use   name="DataFormats/HepMCCandidate"/>
+  <use   name="DataFormats/VertexReco"/>
+  <use   name="DataFormats/BeamSpot"/>
+  <use   name="Utilities/General"/>
+  <use   name="PhysicsTools/UtilAlgos"/>
+  <use   name="PhysicsTools/HepMCCandAlgos"/>
+  <use   name="TrackingTools/TransientTrack"/>
+  <use   name="TrackingTools/Records"/>
+  <use   name="RecoVertex/VertexPrimitives"/>
+  <use   name="RecoVertex/AdaptiveVertexFit"/>
+  <use   name="WarsawAnalysis/HTT"/>
+  <use   name="root"/>
+
+  <flags EDM_PLUGIN="1"/>
+  <flags LDFLAGS="-lXMLIO"/>
+</library>
