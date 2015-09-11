@@ -1,0 +1,14 @@
+<use   name="FWCore/Framework"/>
+<use   name="FWCore/PluginManager"/>
+
+<use   name="DataFormats/Candidate"/>
+<use   name="DataFormats/HepMCCandidate"/>
+<use   name="DataFormats/PatCandidates"/>
+
+<use   name="root"/>  
+
+<export>
+  <lib   name="WarsawAnalysisHTT"/>
+</export>
+
+
