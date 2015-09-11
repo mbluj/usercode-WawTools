@@ -1,3 +1,0 @@
-// Define plugin
-#include "FWCore/Framework/interface/MakerMacros.h"
-DEFINE_FWK_MODULE(MiniAODVertexAnalyzer);
