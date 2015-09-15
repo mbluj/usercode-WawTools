@@ -18,8 +18,13 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+#include "DataFormats/TauReco/interface/PFTau.h"
+#include "DataFormats/TauReco/interface/PFTauFwd.h"
+
+#include "DataFormats/PatCandidates/interface/Tau.h"
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
+
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
@@ -59,7 +64,18 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
 
     //Refit PV using track information stored in miniAOD
     bool refitPV(const edm::Event & iEvent, const edm::EventSetup & iSetup);
-   
+
+    ///Find reconstructed tau candidates.
+    bool findRecoTau(const edm::Event & iEvent, const edm::EventSetup & iSetup);
+
+    ///Find best tau pair
+    std::pair<const pat::Tau*, const pat::Tau*> findTauPair(edm::Handle<std::vector<pat::Tau> > tauColl);
+
+    ///Calculate PCA for given tau candidate, wrt. given vertex.
+    TVector3 getPCA(const edm::Event & iEvent, const edm::EventSetup & iSetup,
+		    const pat::Tau* aTau,
+		    const GlobalPoint & aPoint);
+    
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
@@ -69,7 +85,8 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     edm::EDGetTokenT<reco::GenParticleCollection> genCands_;
     edm::EDGetTokenT<reco::VertexCollection> vertices_;
     edm::EDGetTokenT<reco::BeamSpot> bs_;
-    //int threshold_;
+    edm::EDGetTokenT<std::vector<pat::Tau> > taus_;
+
     bool useBeamSpot_;
     bool verbose_;
 

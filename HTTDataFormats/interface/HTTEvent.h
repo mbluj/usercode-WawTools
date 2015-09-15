@@ -8,6 +8,35 @@
 // class declaration
 //
 
+class DiTauData{
+
+ public:
+
+  ///Data common for generator and reconstruction levels.
+  int decModeMinus_, decModePlus_;
+  TVector3 thePV_;
+  TVector3 svMinus_, svPlus_;
+  TVector3 nPiPlus_, nPiMinus_;
+  
+  TLorentzVector p4Sum_;
+  TLorentzVector piMinus_, piPlus_;
+  TLorentzVector tauMinus_, tauPlus_;
+  TLorentzVector visTauMinus_, visTauPlus_;
+
+  ///Reconstruction level only data
+  TVector3 pfPV_, pt2PV_, rePfPV_;
+  bool isRefit_;
+  int nTracksInRefit_;
+  int pfPVIndex_, pt2PVindex_;
+
+  ///Generator level only data
+
+
+  ///Reset data members to default values.
+  void clear();
+};
+
+
 class HTTEvent {
 
  public:
@@ -18,23 +47,11 @@ class HTTEvent {
 
   ///Reset data members to default values.
   void clear();
-
   
   float run_, lumi_, event_;
-  int bosonId_, decModeMinus_, decModePlus_;
+  int bosonId_;
 
-  int pfPVIndex_, pt2PVindex_;
-
-  bool isRefit_;
-  int nTracksInRefit_;
-  
-  TLorentzVector p4Sum_;
-  TLorentzVector piMinus_, piPlus_;
-  TLorentzVector tauMinus_, tauPlus_;
-  TLorentzVector visTauMinus_, visTauPlus_;
-  
-  TVector3 genPV_, aodPV_, pfPV_, pt2PV_, rePfPV_;
-  TVector3 svMinus_, svPlus_;
+  DiTauData genEvent_, recoEvent_;
     
 };
 

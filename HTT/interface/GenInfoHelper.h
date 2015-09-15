@@ -7,7 +7,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
-
+#include "DataFormats/TauReco/interface/PFTauDecayMode.h"
 #include <utility>
 
 //Root
@@ -15,10 +15,14 @@
 #include "TVector3.h"
 
 namespace WawGenInfoHelper {
+  /*
   enum tauDecayModes {kElectron, kMuon, 
 		      kOneProng0pi0, kOneProng1pi0, kOneProng2pi0, kOneProng3pi0,
 		      kThreeProng0pi0, kThreeProng1pi0,
 		      kOther, kUndefined};
+  */
+
+  typedef reco::PFTauDecayMode::hadronicTauDecayModes tauDecayModes;
 
   
   enum hZDecayModes {kMuTau,kETau,kTauTau,kMuMu,kEE,kEMu,

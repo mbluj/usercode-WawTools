@@ -74,7 +74,7 @@ namespace WawGenInfoHelper {
   //////////////
   int getTauDecayMode(const reco::GenParticleRefVector& products){
 
-    int tauDecayMode = kUndefined;
+    int tauDecayMode = tauDecayModes::tauDecayOther;
 
     int numElectrons      = 0;
     int numMuons          = 0;
@@ -108,50 +108,50 @@ namespace WawGenInfoHelper {
     if( numOtherParticles == 0 ){
       if( numElectrons == 1 ){
 	//--- tau decays into electrons
-	tauDecayMode = kElectron;
+	tauDecayMode = tauDecayModes::tauDecaysElectron;
       } else if( numMuons == 1 ){
 	//--- tau decays into muons
-	tauDecayMode = kMuon;
+	tauDecayMode = tauDecayModes::tauDecayMuon;
       } else {
 	//--- hadronic tau decays
 	switch ( numChargedPions ){
         case 1 :
           if( numNeutralPions != 0 ){
-            tauDecayMode = kOther;
+            tauDecayMode =  tauDecayModes::tauDecayOther;
             break;
 	  }
           switch ( numPhotons ){
 	  case 0:
-	    tauDecayMode = kOneProng0pi0;
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion0PiZero;
 	    break;
 	  case 2:
-	    tauDecayMode = kOneProng1pi0;
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion1PiZero;
 	    break;
 	  case 4:
-	    tauDecayMode = kOneProng2pi0;
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion2PiZero;
 	    break;
 	  case 6:
-	    tauDecayMode = kOneProng3pi0;
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion3PiZero;
 	    break;
 	  default:
-	    tauDecayMode = kOther;
+	    tauDecayMode = tauDecayModes::tauDecayOther;
 	    break;
           }
           break;
         case 3 : 
           if( numNeutralPions != 0 ){
-            tauDecayMode = kOther;
+            tauDecayMode = tauDecayModes::tauDecayOther;
             break;
           }
           switch ( numPhotons ){
 	  case 0 : 
-	    tauDecayMode = kThreeProng0pi0;
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion0PiZero;
 	    break;
 	  case 2 : 
-	    tauDecayMode = kThreeProng1pi0;
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion1PiZero;
 	    break;
 	  default:
-	    tauDecayMode = kOther;
+	    tauDecayMode = tauDecayModes::tauDecayOther;
 	    break;
           }
           break;
@@ -164,7 +164,7 @@ namespace WawGenInfoHelper {
   //////////////
   int getTauDirDecayMode(const reco::GenParticleRefVector& products){
 
-    int tauDecayMode = kUndefined;
+    int tauDecayMode =  tauDecayModes::tauDecayOther;
 
     int numElectrons      = 0;
     int numMuons          = 0;
@@ -197,50 +197,50 @@ namespace WawGenInfoHelper {
     if( numOtherParticles == 0 ){
       if( numElectrons == 1 ){
 	//--- tau decays into electrons
-	tauDecayMode = kElectron;
+	tauDecayMode = tauDecayModes::tauDecaysElectron;
       } else if( numMuons == 1 ){
 	//--- tau decays into muons
-	tauDecayMode = kMuon;
+	tauDecayMode = tauDecayModes::tauDecayMuon;
       } else {
 	//--- hadronic tau decays
 	switch ( numChargedPions ){
         case 1 :
           if( numOtherParticles != 0 ){
-            tauDecayMode = kOther;
+            tauDecayMode = tauDecayModes::tauDecayOther;
             break;
           }
           switch ( numNeutralPions ){
 	  case 0:
-	    tauDecayMode = kOneProng0pi0;
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion0PiZero;
 	    break;
 	  case 1:
-	    tauDecayMode = kOneProng1pi0;
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion1PiZero;
 	    break;
 	  case 2:
-	    tauDecayMode = kOneProng2pi0;
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion2PiZero;
 	    break;
 	  case 3:
-	    tauDecayMode = kOneProng3pi0;
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion3PiZero;
 	    break;
 	  default:
-	    tauDecayMode = kOther;
+	    tauDecayMode = tauDecayModes::tauDecayOther;
 	    break;
           }
           break;
         case 3 : 
 	  if( numOtherParticles != 0 ){
-            tauDecayMode = kOther;
+            tauDecayMode = tauDecayModes::tauDecayOther;
             break;
           }
           switch ( numNeutralPions ){
 	  case 0 : 
-	    tauDecayMode = kThreeProng0pi0;
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion0PiZero;
 	    break;
 	  case 1 : 
-	    tauDecayMode = kThreeProng1pi0;
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion1PiZero;
 	    break;
 	  default:
-	    tauDecayMode = kOther;
+	    tauDecayMode = tauDecayModes::tauDecayOther;
 	    break;
           }
           break;

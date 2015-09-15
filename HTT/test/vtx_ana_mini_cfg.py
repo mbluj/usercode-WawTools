@@ -23,13 +23,25 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1) 
 )
 
+
+DYfileNames = cms.untracked.vstring("file:/home/akalinow/scratch/CMS/HiggsCP/Data/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/009D49A5-7314-E511-84EF-0025905A605E.root",
+                                    "file:/home/akalinow/scratch/CMS/HiggsCP/Data/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/00C0BECF-6F14-E511-96F8-0025904B739A.root",
+                                    "file:/home/akalinow/scratch/CMS/HiggsCP/Data/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/0260F225-7614-E511-A79F-00A0D1EE8EB4.root",
+                                    "file:/home/akalinow/scratch/CMS/HiggsCP/Data/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/02B810EA-7214-E511-BDAB-0025905964C2.root")
+
+HTauTauFileNames = cms.untracked.vstring("file:/home/akalinow/scratch/CMS/HiggsCP/Data/GluGluHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/242A73B4-0A2F-E511-A2A0-00259073E474.root")
+
+ATauTauFileNames = cms.untracked.vstring("file:/home/akalinow/scratch/CMS/HiggsCP/Data/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/2C871A0B-3303-E511-B8D0-0025B3E05D74.root")
+
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-	#"file:/home/akalinow/scratch/CMS/HiggsCP/Data/SUSYGluGluH0ToTauTau_M-125_TuneCUETP8M1_13TeV_pythia8_GEN_RunIIWinter15GS-MCRUN2_71_V1-v2/C871A0B-3303-E511-B8D0-0025B3E05D74.root"
-        "file:/home/akalinow/scratch/CMS/HiggsCP/Data/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
-        #"root://cms-xrd-global.cern.ch//store/mc/RunIISpring15DR74/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/10000/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
+        "root://cms-xrd-global.cern.ch//store/mc/RunIISpring15DR74/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/10000/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
 	)
 )
+
+process.source.fileNames = DYfileNames
+process.source.fileNames.append(HTauTauFileNames[0])
+process.source.fileNames.append(ATauTauFileNames[0])
 
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
 process.printTree = cms.EDAnalyzer("ParticleListDrawer",
@@ -64,6 +76,7 @@ process.vtxAna = cms.EDAnalyzer(
     vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
     vertexScores = cms.InputTag("offlineSlimmedPrimaryVertices"),
     beamSpot = cms.InputTag("offlineBeamSpot"),
+    taus = cms.InputTag("slimmedTaus"),
     useBeamSpot = cms.bool(True),
     verbose = cms.untracked.bool(False),
 )

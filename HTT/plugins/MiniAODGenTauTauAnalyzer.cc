@@ -15,8 +15,8 @@ MiniAODGenTauTauAnalyzer::MiniAODGenTauTauAnalyzer(const edm::ParameterSet& iCon
   packedGenToken_(consumes<edm::View<pat::PackedGenParticle> >(iConfig.getParameter<edm::InputTag>("packed"))),
   verbose_(iConfig.getUntrackedParameter<bool>("verbose",false)),
   bosonId_(0),
-  decModeMinus_(WawGenInfoHelper::kUndefined),
-  decModePlus_(WawGenInfoHelper::kUndefined)
+  decModeMinus_(WawGenInfoHelper::tauDecayModes::tauDecayOther),
+  decModePlus_(WawGenInfoHelper::tauDecayModes::tauDecayOther)
 {
   //edm::Service<edm::RandomNumberGenerator> rng; need to be called here? it is only for check its availability with ng.isAvailable()?
 
