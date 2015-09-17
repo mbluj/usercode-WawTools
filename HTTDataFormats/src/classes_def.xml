@@ -1,6 +1,7 @@
 
 <lcgdict>
   <class name="HTTEvent"/>
+  <class name="DiTauData"/>
 </lcgdict>
 
  

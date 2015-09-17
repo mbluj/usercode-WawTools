@@ -2,7 +2,10 @@
 
 namespace HTTDataFormats {
   struct dictionary {
+
+    DiTauData aData;
     HTTEvent aEvent;
+    
   };
 }
 
