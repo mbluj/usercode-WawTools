@@ -167,10 +167,11 @@ bool MiniAODVertexAnalyzer::getGenData(const edm::Event & iEvent, const edm::Eve
 bool  MiniAODVertexAnalyzer::getRecoData(const edm::Event & iEvent, const edm::EventSetup & iSetup){
 
   bool hasAnyVx = findPrimaryVertices(iEvent, iSetup);
+  bool hasRecoTau = findRecoTau(iEvent, iSetup);
 
   refitPV(iEvent, iSetup);
 
-  bool hasRecoTau = findRecoTau(iEvent, iSetup);
+  setPCAVectors(iEvent, iSetup);
 
   return hasAnyVx && hasRecoTau;
 }
@@ -192,15 +193,22 @@ bool  MiniAODVertexAnalyzer::refitPV(const edm::Event & iEvent, const edm::Event
 
   //Get tracks associated wiht pfPV
   reco::TrackCollection pvTracks;
+  TLorentzVector aTrack;
   for(size_t i=0; i<cands->size(); ++i){
-    if((*cands)[i].charge()==0 || (*cands)[i].vertexRef().isNull()) continue;      
-      int key = (*cands)[i].vertexRef().key();
-      int quality = (*cands)[i].pvAssociationQuality();
-      if(key!=myEvent_->recoEvent_.pfPVIndex_ ||
-	 (quality!=pat::PackedCandidate::UsedInFitTight &&
-	  quality!=pat::PackedCandidate::UsedInFitLoose)) continue;
-      if(!(*cands)[i].bestTrack()) continue;
-      pvTracks.push_back(*((*cands)[i].bestTrack()));
+    if((*cands)[i].charge()==0 || (*cands)[i].vertexRef().isNull()) continue;
+    if(!(*cands)[i].bestTrack()) continue;
+    ///Skip tracks comming from tau decay.
+    aTrack.SetPxPyPzE((*cands)[i].px(),(*cands)[i].py(),(*cands)[i].pz(),(*cands)[i].energy());
+    if(myEvent_->recoEvent_.piMinus_.DeltaR(aTrack)<0.01 ||
+       myEvent_->recoEvent_.piPlus_.DeltaR(aTrack)<0.01) continue;       
+    
+    int key = (*cands)[i].vertexRef().key();
+    int quality = (*cands)[i].pvAssociationQuality();
+    if(key!=myEvent_->recoEvent_.pfPVIndex_ ||
+       (quality!=pat::PackedCandidate::UsedInFitTight &&
+	quality!=pat::PackedCandidate::UsedInFitLoose)) continue;
+
+    pvTracks.push_back(*((*cands)[i].bestTrack()));
   }
   ///Built transient tracks from tracks.
   std::vector<reco::TransientTrack> transTracks;  
@@ -231,7 +239,7 @@ bool  MiniAODVertexAnalyzer::refitPV(const edm::Event & iEvent, const edm::Event
 					 (*vertices)[myEvent_->recoEvent_.pfPVIndex_].z());
      myEvent_->recoEvent_.isRefit_=false;
   }
-
+  
   return true;
 }
 /////////////////////////////////////////////////////////////////
@@ -377,15 +385,48 @@ bool MiniAODVertexAnalyzer::findRecoTau(const edm::Event & iEvent, const edm::Ev
 					   myPair.second->leadChargedHadrCand()->p4().pz(),
 					   myPair.second->leadChargedHadrCand()->p4().e());
 
-   edm::Handle<reco::VertexCollection> vertices;
-   iEvent.getByToken(vertices_, vertices); 
+  
 
-   GlobalPoint aPoint = RecoVertex::convertPos((*vertices)[0].position());
    
-   myEvent_->recoEvent_.nPiPlus_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
-   myEvent_->recoEvent_.nPiMinus_ = getPCA(iEvent,iSetup, myPair.second, aPoint);
      
   return true;
+}
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+bool MiniAODVertexAnalyzer::setPCAVectors(const edm::Event & iEvent, const edm::EventSetup & iSetup){
+
+  edm::Handle<std::vector<pat::Tau> > tauColl;
+  iEvent.getByToken(taus_,tauColl);
+  if(tauColl->size()<2) return false;
+
+  std::pair<const pat::Tau*, const pat::Tau*> myPair = findTauPair(tauColl);
+  if(!myPair.first || !myPair.second) return false;
+
+  GlobalPoint aPoint(myEvent_->recoEvent_.thePV_.X(),
+		     myEvent_->recoEvent_.thePV_.Y(),
+		     myEvent_->recoEvent_.thePV_.Z());
+
+  myEvent_->recoEvent_.nPiPlus_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
+  myEvent_->recoEvent_.nPiMinus_ = getPCA(iEvent,iSetup, myPair.second, aPoint);
+
+   ///Test different PVs.
+   ///AOD PV
+   myEvent_->recoEvent_.nPiPlusAODvx_ = myEvent_->recoEvent_.nPiPlus_;
+
+   ///PV refit excluding tau tracks
+   aPoint = GlobalPoint(myEvent_->recoEvent_.rePfPV_.X(),
+			myEvent_->recoEvent_.rePfPV_.Y(),
+			myEvent_->recoEvent_.rePfPV_.Z());
+   myEvent_->recoEvent_.nPiPlusRefitvx_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
+
+   ///Generated PV
+   aPoint = GlobalPoint(myEvent_->genEvent_.thePV_.X(),
+			myEvent_->genEvent_.thePV_.Y(),
+			myEvent_->genEvent_.thePV_.Z());
+   myEvent_->recoEvent_.nPiPlusGenvx_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
+
+
+   return true;
 }
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////

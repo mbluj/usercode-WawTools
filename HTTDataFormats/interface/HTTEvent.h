@@ -17,6 +17,8 @@ class DiTauData{
   TVector3 thePV_;
   TVector3 svMinus_, svPlus_;
   TVector3 nPiPlus_, nPiMinus_;
+
+  TVector3 nPiPlusAODvx_,  nPiPlusGenvx_,  nPiPlusRefitvx_; 
   
   TLorentzVector p4Sum_;
   TLorentzVector piMinus_, piPlus_;

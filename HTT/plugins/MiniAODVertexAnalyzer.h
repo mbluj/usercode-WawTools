@@ -63,6 +63,7 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     bool findPrimaryVertices(const edm::Event & iEvent, const edm::EventSetup & iSetup);
 
     //Refit PV using track information stored in miniAOD
+    ///This has to be run AFTER finding tau candidates
     bool refitPV(const edm::Event & iEvent, const edm::EventSetup & iSetup);
 
     ///Find reconstructed tau candidates.
@@ -70,6 +71,10 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
 
     ///Find best tau pair
     std::pair<const pat::Tau*, const pat::Tau*> findTauPair(edm::Handle<std::vector<pat::Tau> > tauColl);
+
+    ///Set PCA vector for reco taus. This must be run AFTER
+    ///vertex refitting.
+    bool setPCAVectors(const edm::Event & iEvent, const edm::EventSetup & iSetup);
 
     ///Calculate PCA for given tau candidate, wrt. given vertex.
     TVector3 getPCA(const edm::Event & iEvent, const edm::EventSetup & iSetup,

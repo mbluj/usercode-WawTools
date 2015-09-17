@@ -29,7 +29,10 @@ DYfileNames = cms.untracked.vstring("file:/home/akalinow/scratch/CMS/HiggsCP/Dat
                                     "file:/home/akalinow/scratch/CMS/HiggsCP/Data/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/0260F225-7614-E511-A79F-00A0D1EE8EB4.root",
                                     "file:/home/akalinow/scratch/CMS/HiggsCP/Data/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v3/02B810EA-7214-E511-BDAB-0025905964C2.root")
 
-HTauTauFileNames = cms.untracked.vstring("file:/home/akalinow/scratch/CMS/HiggsCP/Data/GluGluHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/242A73B4-0A2F-E511-A2A0-00259073E474.root")
+HTauTauFileNames = cms.untracked.vstring("file:/home/akalinow/scratch/CMS/HiggsCP/Data/GluGluHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/242A73B4-0A2F-E511-A2A0-00259073E474.root",
+                                         "file:/home/akalinow/scratch/CMS/HiggsCP/Data/GluGluHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/48DF1EE2-1B2F-E511-9EA7-00259073E4C2.root",
+                                         "file:/home/akalinow/scratch/CMS/HiggsCP/Data/GluGluHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/4AF51D45-6A2F-E511-A56A-002618943868.root",
+                                         "file:/home/akalinow/scratch/CMS/HiggsCP/Data/GluGluHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/7ADC24DF-1B2F-E511-B538-00259073E4F6.root")
 
 ATauTauFileNames = cms.untracked.vstring("file:/home/akalinow/scratch/CMS/HiggsCP/Data/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/2C871A0B-3303-E511-B8D0-0025B3E05D74.root")
 
@@ -39,9 +42,10 @@ process.source = cms.Source("PoolSource",
 	)
 )
 
-process.source.fileNames = DYfileNames
-process.source.fileNames.append(HTauTauFileNames[0])
-process.source.fileNames.append(ATauTauFileNames[0])
+#process.source.fileNames = DYfileNames
+process.source.fileNames = HTauTauFileNames
+#process.source.fileNames.append(HTauTauFileNames[0])
+#process.source.fileNames.append(ATauTauFileNames[0])
 
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
 process.printTree = cms.EDAnalyzer("ParticleListDrawer",
