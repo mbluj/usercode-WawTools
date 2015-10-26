@@ -18,7 +18,8 @@ class DiTauData{
   TVector3 svMinus_, svPlus_;
   TVector3 nPiPlus_, nPiMinus_;
 
-  TVector3 nPiPlusAODvx_,  nPiPlusGenvx_,  nPiPlusRefitvx_; 
+  TVector3 nPiPlusAODvx_,  nPiPlusGenvx_,  nPiPlusRefitvx_;
+  TVector3 nPiMinusAODvx_,  nPiMinusGenvx_,  nPiMinusRefitvx_; 
   
   TLorentzVector p4Sum_;
   TLorentzVector piMinus_, piPlus_;
@@ -26,7 +27,7 @@ class DiTauData{
   TLorentzVector visTauMinus_, visTauPlus_;
 
   ///Reconstruction level only data
-  TVector3 pfPV_, pt2PV_, rePfPV_;
+  TVector3 pfPV_, pt2PV_, refitPfPV_, refitPfPVNoBS_;
   bool isRefit_;
   int nTracksInRefit_;
   int pfPVIndex_, pt2PVindex_;

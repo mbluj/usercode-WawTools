@@ -25,6 +25,9 @@
 #include "TrackingTools/GeomPropagators/interface/AnalyticalTrajectoryExtrapolatorToLine.h"
 #include "TrackingTools/GeomPropagators/interface/AnalyticalImpactPointExtrapolator.h"
 
+//#include "DataFormats/​GeometryVector/​interface/​LocalPoint.h"
+
+
 MiniAODVertexAnalyzer::MiniAODVertexAnalyzer(const edm::ParameterSet & iConfig) :
   scores_(consumes<edm::ValueMap<float> >(iConfig.getParameter<edm::InputTag>("vertexScores"))),
   cands_(consumes<edm::View<pat::PackedCandidate> >(iConfig.getParameter<edm::InputTag>("src"))),
@@ -189,7 +192,7 @@ bool  MiniAODVertexAnalyzer::refitPV(const edm::Event & iEvent, const edm::Event
   edm::ESHandle<TransientTrackBuilder> transTrackBuilder;
   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",transTrackBuilder);
  
-  TransientVertex transVtx;
+  TransientVertex transVtx, transVtxNoBS;
 
   //Get tracks associated wiht pfPV
   reco::TrackCollection pvTracks;
@@ -220,8 +223,8 @@ bool  MiniAODVertexAnalyzer::refitPV(const edm::Event & iEvent, const edm::Event
     AdaptiveVertexFitter avf;
     avf.setWeightThreshold(0.1); //weight per track. allow almost every fit, else --> exception    
     try {
-      if( !useBeamSpot_ ) transVtx = avf.vertex(transTracks);
-      else transVtx = avf.vertex(transTracks, *beamSpot);
+      transVtxNoBS = avf.vertex(transTracks);      
+      transVtx = avf.vertex(transTracks, *beamSpot);
       fitOk = true; 
     } catch (...) {
       fitOk = false; 
@@ -229,14 +232,19 @@ bool  MiniAODVertexAnalyzer::refitPV(const edm::Event & iEvent, const edm::Event
     }
   }
   
-  if(fitOk && transVtx.isValid() ) { 
-     myEvent_->recoEvent_.rePfPV_.SetXYZ(transVtx.position().x(),transVtx.position().y(),transVtx.position().z());
+  if(fitOk && transVtx.isValid() && transVtxNoBS.isValid()) { 
+    //myEvent_->recoEvent_.refitPfPV_.SetXYZ(transVtx.position().x(),transVtx.position().y(),transVtx.position().z());
+    //myEvent_->recoEvent_.refitPfPVNoBS_.SetXYZ(transVtxNoBS.position().x(),transVtxNoBS.position().y(),transVtxNoBS.position().z());
+
+    myEvent_->recoEvent_.refitPfPV_.SetXYZ(transVtx.position().x(),transVtx.position().y(),(*vertices)[0].z()); //TEST
+    myEvent_->recoEvent_.refitPfPVNoBS_.SetXYZ(transVtxNoBS.position().x(),transVtxNoBS.position().y(),(*vertices)[0].z());//TEST
      myEvent_->recoEvent_.isRefit_=true;
   }
   else {
-     myEvent_->recoEvent_.rePfPV_.SetXYZ((*vertices)[myEvent_->recoEvent_.pfPVIndex_].x(),
-					 (*vertices)[myEvent_->recoEvent_.pfPVIndex_].y(),
-					 (*vertices)[myEvent_->recoEvent_.pfPVIndex_].z());
+     myEvent_->recoEvent_.refitPfPV_.SetXYZ((*vertices)[0].x(),
+					    (*vertices)[0].y(),
+					    (*vertices)[0].z());
+     myEvent_->recoEvent_.refitPfPVNoBS_ = myEvent_->recoEvent_.refitPfPV_;
      myEvent_->recoEvent_.isRefit_=false;
   }
   
@@ -402,30 +410,35 @@ bool MiniAODVertexAnalyzer::setPCAVectors(const edm::Event & iEvent, const edm::
   std::pair<const pat::Tau*, const pat::Tau*> myPair = findTauPair(tauColl);
   if(!myPair.first || !myPair.second) return false;
 
-  GlobalPoint aPoint(myEvent_->recoEvent_.thePV_.X(),
-		     myEvent_->recoEvent_.thePV_.Y(),
-		     myEvent_->recoEvent_.thePV_.Z());
+  GlobalPoint aPoint(myEvent_->recoEvent_.refitPfPV_.X(),
+		     myEvent_->recoEvent_.refitPfPV_.Y(),
+		     myEvent_->recoEvent_.refitPfPV_.Z());
 
   myEvent_->recoEvent_.nPiPlus_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
   myEvent_->recoEvent_.nPiMinus_ = getPCA(iEvent,iSetup, myPair.second, aPoint);
 
    ///Test different PVs.
    ///AOD PV
-   myEvent_->recoEvent_.nPiPlusAODvx_ = myEvent_->recoEvent_.nPiPlus_;
-
-   ///PV refit excluding tau tracks
-   aPoint = GlobalPoint(myEvent_->recoEvent_.rePfPV_.X(),
-			myEvent_->recoEvent_.rePfPV_.Y(),
-			myEvent_->recoEvent_.rePfPV_.Z());
-   myEvent_->recoEvent_.nPiPlusRefitvx_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
-
-   ///Generated PV
+  aPoint = GlobalPoint(myEvent_->recoEvent_.thePV_.X(),
+		       myEvent_->recoEvent_.thePV_.Y(),
+		       myEvent_->recoEvent_.thePV_.Z());
+  myEvent_->recoEvent_.nPiPlusAODvx_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
+  myEvent_->recoEvent_.nPiMinusAODvx_ = getPCA(iEvent,iSetup, myPair.second, aPoint);
+  
+  ///PV refit excluding tau tracks
+  aPoint = GlobalPoint(myEvent_->recoEvent_.refitPfPV_.X(),
+		       myEvent_->recoEvent_.refitPfPV_.Y(),
+		       myEvent_->recoEvent_.refitPfPV_.Z());
+  myEvent_->recoEvent_.nPiPlusRefitvx_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
+  myEvent_->recoEvent_.nPiMinusRefitvx_ = getPCA(iEvent,iSetup, myPair.second, aPoint);
+  
+  ///Generated PV
    aPoint = GlobalPoint(myEvent_->genEvent_.thePV_.X(),
 			myEvent_->genEvent_.thePV_.Y(),
 			myEvent_->genEvent_.thePV_.Z());
    myEvent_->recoEvent_.nPiPlusGenvx_ = getPCA(iEvent,iSetup, myPair.first, aPoint);
-
-
+   myEvent_->recoEvent_.nPiMinusGenvx_ = getPCA(iEvent,iSetup, myPair.second, aPoint);
+  
    return true;
 }
 /////////////////////////////////////////////////////////////////
@@ -438,19 +451,48 @@ TVector3 MiniAODVertexAnalyzer::getPCA(const edm::Event & iEvent, const edm::Eve
   if(!aTau->leadChargedHadrCand()->bestTrack()) return aPCA;
   
   edm::ESHandle<TransientTrackBuilder> transTrackBuilder;
-  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",transTrackBuilder);
-    
-   reco::TransientTrack transTrk=transTrackBuilder->build(aTau->leadChargedHadrCand()->bestTrack());
-   //GlobalVector direction(aTau->p4().px(), aTau->p4().py(), aTau->p4().pz()); //To compute sign of IP
-   //std::pair<bool,Measurement1D> signed_IP2D = IPTools::signedTransverseImpactParameter(transTrk, direction,aVertex);
-   TransverseImpactPointExtrapolator extrapolator(transTrk.field());
-   GlobalPoint pos  = extrapolator.extrapolate(transTrk.impactPointState(),aPoint).globalPosition();
+  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",transTrackBuilder);  
+  reco::TransientTrack transTrk=transTrackBuilder->build(aTau->leadChargedHadrCand()->bestTrack());
+     
+  //TransverseImpactPointExtrapolator extrapolator(transTrk.field());
+  AnalyticalImpactPointExtrapolator extrapolator(transTrk.field());
+  GlobalPoint pos  = extrapolator.extrapolate(transTrk.impactPointState(),aPoint).globalPosition();
 
-   aPCA.SetX(pos.x() - aPoint.x());
-   aPCA.SetY(pos.y() - aPoint.y());
-   aPCA.SetZ(pos.z() - aPoint.z());
+  aPCA.SetX(pos.x() - aPoint.x());
+  aPCA.SetY(pos.y() - aPoint.y());
+  aPCA.SetZ(pos.z() - aPoint.z());
 
-   return aPCA;
+  /*
+  edm::Handle<reco::VertexCollection> vertices;
+  iEvent.getByToken(vertices_, vertices);
+  GlobalVector direction(aTau->p4().px(), aTau->p4().py(), aTau->p4().pz()); //To compute sign of IP   
+  std::pair<bool,Measurement1D> signed_IP2D = IPTools::signedTransverseImpactParameter(transTrk, direction,(*vertices)[0]);
+
+  GlobalVector mom  = extrapolator.extrapolate(transTrk.impactPointState(),aPoint).globalMomentum();
+  LocalVector momLoc  = extrapolator.extrapolate(transTrk.impactPointState(),aPoint).localMomentum();
+  TVector3 extrapolatedMom(mom.x(), mom.y(), mom.z());  
+  GlobalPoint point = extrapolator.extrapolate(transTrk.impactPointState(),aPoint).surface().toGlobal(Local3DPoint(0,0,1));
+  TVector3 aTestPoint(point.x() - aPoint.x(),
+		      point.y() - aPoint.y(),
+		      point.z() - aPoint.z());
+  
+ 
+  
+   std::cout<<"IP2D: "<<signed_IP2D.second.value()
+	   <<" PCA local: "<<extrapolator.extrapolate(transTrk.impactPointState(),aPoint).localPosition()
+	    <<" mag local: "<<extrapolator.extrapolate(transTrk.impactPointState(),aPoint).localPosition().mag()
+	    <<" PCA global: ("<<aPCA.X()<<" "<<aPCA.Y()<<" "<<aPCA.Z()<<")"
+	    <<" mag global: "<<aPCA.Mag()
+	    <<std::endl
+	    <<"vertex: "<<aPoint
+     	    <<" test point: ("<<aTestPoint.X()<<" "<<aTestPoint.Y()<<" "<<aTestPoint.Z()<<")"
+	    <<" dot (PCA, extrapol. mom.): "<<aPCA.Unit().Dot(extrapolatedMom.Unit())
+	    <<" local mom: "<<momLoc
+	    <<" global mom: "<<mom
+     //<<" dot (mom, extrapol. mom.): "<<extrapolatedMom.Unit().Dot( myEvent_->recoEvent_.piPlus_.Vect().Unit())
+	    <<std::endl;
+  */
+  return aPCA;
 }
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////

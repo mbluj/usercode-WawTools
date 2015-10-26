@@ -1,6 +1,9 @@
+#ifdef PROJECT_NAME
 #include "WarsawAnalysis/HTTDataFormats/interface/HTTEvent.h"
-
 #include "WarsawAnalysis/HTT/interface/GenInfoHelper.h"
+#else
+#include "HTTEvent.h"
+#endif
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -29,8 +32,13 @@ void HTTEvent::clear(){
 //////////////////////////////////////////////
 void DiTauData::clear(){
 
+#ifdef PROJECT_NAME
   decModeMinus_ = WawGenInfoHelper::tauDecayModes::tauDecayOther;
   decModePlus_ = WawGenInfoHelper::tauDecayModes::tauDecayOther;
+#else
+  decModeMinus_  = 99;
+  decModePlus_  = 99;
+#endif
 
   thePV_ = TVector3();
   svMinus_ = TVector3();
@@ -48,7 +56,8 @@ void DiTauData::clear(){
 
   pfPV_ = TVector3();
   pt2PV_ = TVector3();
-  rePfPV_ = TVector3();
+  refitPfPV_ = TVector3();
+  refitPfPVNoBS_ = TVector3();
 
   isRefit_ = false;
   nTracksInRefit_ = 0;
