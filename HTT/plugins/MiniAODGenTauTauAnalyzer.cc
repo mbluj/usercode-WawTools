@@ -215,8 +215,14 @@ void MiniAODGenTauTauAnalyzer::analyze(const edm::Event& iEvent, const edm::Even
   treeVars_["phi2"]=anglesPi.first;
   //angles for visible tau - leading charge particle system in visible rest frame
   std::pair<float,float> anglesRho = 
+    /* Old definition in the rho-rho rest frame
     WawGenInfoHelper::angleBetweenPlanes(*visTauMinus_, *piMinus_,
 					 *visTauPlus_, *piPlus_);
+    */
+    /* New definition in the leading charged partices frame */
+    WawGenInfoHelper::angleBetweenPlanes(*piMinus_, (*visTauMinus_)-(*piMinus_),
+					 *piPlus_, (*visTauPlus_)-(*piPlus_) );
+
   treeVars_["phiRho"]=anglesRho.first;
   //energy difference beteen leadig charged and visible tau in different frames
   // tau frames (ideal)

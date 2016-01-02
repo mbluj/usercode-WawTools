@@ -444,7 +444,10 @@ namespace WawGenInfoHelper {
     TVector3 n1 = ( direction.Cross( prod12Star.Vect() ) ).Unit(); 
     TVector3 n2 = ( direction.Cross( prod22Star.Vect() ) ).Unit(); 
     
+    float calO = direction * ( n1.Cross(n2) ); //defines phase
     float phi=TMath::ACos(n1*n2);
+    if(calO<0)
+      phi = 2.*TMath::Pi()-phi;
     float rho=TMath::ACos( (prod12Star.Vect().Unit() )*(prod22Star.Vect().Unit() ) );
 
     return std::make_pair(phi,rho);
