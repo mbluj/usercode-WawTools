@@ -81,6 +81,16 @@ namespace WawGenInfoHelper {
   void findAncestors(const reco::GenParticleRef& base, 
 		     reco::GenParticleRefVector& ancestors, 
 		     int status, int pdgId=0);
-}
+
+  float getGenIso(const TLorentzVector& candidateP4,
+		  const reco::GenParticleRefVector& particles,
+		  double isoCone=0.3, double vetoCone=0.001, double minPt=0.5);
+  
+  float getGenIso(const TLorentzVector& candidateP4,
+		  const reco::GenParticleCollection& particles,
+		  double isoCone=0.3, double vetoCone=0.001, double minPt=0.5);
+
+
+} //namespace
 
 #endif

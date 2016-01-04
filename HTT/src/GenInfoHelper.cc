@@ -1,5 +1,6 @@
 
 #include "WarsawAnalysis/HTT/interface/GenInfoHelper.h"
+#include "DataFormats/Math/interface/deltaR.h"
 
 #include <vector>
 #include <string>
@@ -133,6 +134,9 @@ namespace WawGenInfoHelper {
 	  case 6:
 	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion3PiZero;
 	    break;
+	  case 8:
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion4PiZero;
+	    break;
 	  default:
 	    tauDecayMode = tauDecayModes::tauDecayOther;
 	    break;
@@ -149,6 +153,15 @@ namespace WawGenInfoHelper {
 	    break;
 	  case 2 : 
 	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion1PiZero;
+	    break;
+	  case 4 : 
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion2PiZero;
+	    break;
+	  case 6 : 
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion3PiZero;
+	    break;
+	  case 8 : 
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion4PiZero;
 	    break;
 	  default:
 	    tauDecayMode = tauDecayModes::tauDecayOther;
@@ -222,6 +235,9 @@ namespace WawGenInfoHelper {
 	  case 3:
 	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion3PiZero;
 	    break;
+	  case 4:
+	    tauDecayMode = tauDecayModes::tauDecay1ChargedPion4PiZero;
+	    break;
 	  default:
 	    tauDecayMode = tauDecayModes::tauDecayOther;
 	    break;
@@ -238,6 +254,15 @@ namespace WawGenInfoHelper {
 	    break;
 	  case 1 : 
 	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion1PiZero;
+	    break;
+	  case 2 : 
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion2PiZero;
+	    break;
+	  case 3 : 
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion3PiZero;
+	    break;
+	  case 4 : 
+	    tauDecayMode = tauDecayModes::tauDecay3ChargedPion4PiZero;
 	    break;
 	  default:
 	    tauDecayMode = tauDecayModes::tauDecayOther;
@@ -549,4 +574,33 @@ namespace WawGenInfoHelper {
     }
   }
   
-}
+  //////////////
+  float getGenIso(const TLorentzVector& candidateP4,
+		  const reco::GenParticleRefVector& particles,
+		  double isoCone, double vetoCone, double minPt){
+
+    float iso=0;
+
+    for(unsigned int ipp=0; ipp<particles.size(); ++ipp){
+      if(particles[ipp]->numberOfDaughters()!=0) continue; //ignore instable
+      double dR2=deltaR2(candidateP4.Eta(), candidateP4.Phi(),
+			 particles[ipp]->eta(),particles[ipp]->phi() );
+      if(dR2<isoCone*isoCone && dR2>vetoCone*vetoCone && 
+	 particles[ipp]->pt()>minPt)
+	iso += particles[ipp]->pt();
+    }
+
+    return iso;
+  }
+
+  //////////////
+  float getGenIso(const TLorentzVector& candidateP4,
+		  const reco::GenParticleCollection&  particles,
+		  double isoCone, double vetoCone, double minPt){
+    
+    reco::GenParticleRefVector final;
+    findParticles(particles, final, 0, 1);
+    return getGenIso(candidateP4,final,isoCone,vetoCone,minPt);
+  }
+
+} //namespace
