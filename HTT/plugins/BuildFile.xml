@@ -21,6 +21,7 @@
   <use   name="TrackingTools/IPTools"/>
   <use   name="RecoVertex/VertexPrimitives"/>
   <use   name="RecoVertex/AdaptiveVertexFit"/>  
+  <use   name="SimDataFormats/GeneratorProducts"/>
   <use   name="root"/>
 
   <use   name="WarsawAnalysis/HTT"/>
