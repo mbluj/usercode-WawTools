@@ -439,6 +439,10 @@ namespace WawGenInfoHelper {
     return TVector3(part->vx(),part->vy(),part->vz());
   }
   //////////////
+  TVector3 getVertex(const reco::GenParticle& part){
+    return TVector3(part.vx(),part.vy(),part.vz());
+  }
+  //////////////
   void getVertex(const reco::GenParticleRef& part, TVector3 *vtx){
     setV3Ptr(getVertex(part),vtx);
   }
@@ -582,7 +586,7 @@ namespace WawGenInfoHelper {
     float iso=0;
 
     for(unsigned int ipp=0; ipp<particles.size(); ++ipp){
-      if(particles[ipp]->numberOfDaughters()!=0) continue; //ignore instable
+      if(particles[ipp]->status()!=1 || particles[ipp]->numberOfDaughters()!=0) continue; //ignore unstable
       double dR2=deltaR2(candidateP4.Eta(), candidateP4.Phi(),
 			 particles[ipp]->eta(),particles[ipp]->phi() );
       if(dR2<isoCone*isoCone && dR2>vetoCone*vetoCone && 
