@@ -75,6 +75,7 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
 process.vtxAna = cms.EDAnalyzer(
     "MiniAODVertexAnalyzer",
     src = cms.InputTag("packedPFCandidates"),
+    lostSrc = cms.InputTag("lostTracks"),
     genSrc = cms.InputTag("prunedGenParticles"),
     #pruned = cms.InputTag("genParticles"),
     vertices = cms.InputTag("offlineSlimmedPrimaryVertices"),
@@ -82,6 +83,8 @@ process.vtxAna = cms.EDAnalyzer(
     beamSpot = cms.InputTag("offlineBeamSpot"),
     taus = cms.InputTag("slimmedTaus"),
     useBeamSpot = cms.bool(True),
+    useLostCands = cms.bool(False),
+    useTauTracks = cms.untracked.bool(False),
     verbose = cms.untracked.bool(False),
 )
 

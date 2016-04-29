@@ -86,19 +86,22 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     virtual void endJob() override;
 
     edm::EDGetTokenT<edm::ValueMap<float>> scores_;
-    edm::EDGetTokenT<edm::View<pat::PackedCandidate> >  cands_;
+    edm::EDGetTokenT<edm::View<pat::PackedCandidate> >  cands_, lostCands_;
     edm::EDGetTokenT<reco::GenParticleCollection> genCands_;
     edm::EDGetTokenT<reco::VertexCollection> vertices_;
     edm::EDGetTokenT<reco::BeamSpot> bs_;
     edm::EDGetTokenT<std::vector<pat::Tau> > taus_;
 
-    bool useBeamSpot_;
+    bool useBeamSpot_, useLostCands_, useTauTracks_;
     bool verbose_;
 
     //std::map<std::string, float> treeVars_;      
     TTree *tree_;
 
     HTTEvent *myEvent_;
+
+    std::pair<const pat::Tau*, const pat::Tau*> thePair_;
+    
        
 };
 
