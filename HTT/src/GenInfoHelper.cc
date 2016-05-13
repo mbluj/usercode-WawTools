@@ -388,12 +388,13 @@ namespace WawGenInfoHelper {
     
     float maxPt=0;
     reco::GenParticleRef part;
+    /*
     std::set<int> charged;
     charged.insert(211);//pi
     charged.insert(321);//K
     charged.insert(11);//e
     charged.insert(13);//mu
-    
+    */
     for(IGR idr = products.begin(); idr != products.end(); ++idr ){
       if( (*idr)->pt() > maxPt &&
 	  //charged.find( std::abs( (*idr)->pdgId() ) )!=charged.end() //MB: Logix used in pure Pythia code when charge not defined
@@ -428,6 +429,27 @@ namespace WawGenInfoHelper {
     TLorentzVector p4;
     for(IGR id=products.begin(); id!=products.end(); ++id)
       p4 += getP4( *id );
+    return p4;
+  }
+  //////////////
+  TLorentzVector getChargedP4(const reco::GenParticleRefVector& products){    
+    /*
+    std::set<int> charged;
+    charged.insert(211);//pi
+    charged.insert(321);//K
+    charged.insert(11);//e
+    charged.insert(13);//mu
+    */
+
+    TLorentzVector p4;
+    
+    for(IGR idr = products.begin(); idr != products.end(); ++idr ){
+      if( //charged.find( std::abs( (*idr)->pdgId() ) )!=charged.end() //MB: Logix used in pure Pythia code when charge not defined
+	  std::abs( (*idr)->charge() )>0.001 //MB: GenParts have defined charge
+	  ){
+	p4 += getP4( *idr );
+      }
+    }
     return p4;
   }
   //////////////

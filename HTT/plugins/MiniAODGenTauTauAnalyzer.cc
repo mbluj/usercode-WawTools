@@ -75,6 +75,10 @@ MiniAODGenTauTauAnalyzer::MiniAODGenTauTauAnalyzer(const edm::ParameterSet& iCon
   tree_->Branch("piMinus.","TLorentzVector",piMinus_);
   piPlus_ = new TLorentzVector();
   tree_->Branch("piPlus.","TLorentzVector",piPlus_);
+  chargedMinus_ = new TLorentzVector();
+  tree_->Branch("chargedMinus.","TLorentzVector",chargedMinus_);
+  chargedPlus_ = new TLorentzVector();
+  tree_->Branch("chargedPlus.","TLorentzVector",chargedPlus_);
   tauMinus_ = new TLorentzVector();
   tree_->Branch("tauMinus.","TLorentzVector",tauMinus_);
   tauPlus_ = new TLorentzVector();
@@ -91,6 +95,10 @@ MiniAODGenTauTauAnalyzer::MiniAODGenTauTauAnalyzer(const edm::ParameterSet& iCon
   tree_->Branch("toyPiZeroMinus.","TLorentzVector",toyPiZeroMinus_);
   toyPiZeroPlus_ = new TLorentzVector();
   tree_->Branch("toyPiZeroPlus.","TLorentzVector",toyPiZeroPlus_);
+  toyChargedMinus_ = new TLorentzVector();
+  tree_->Branch("toyChargedMinus.","TLorentzVector",toyChargedMinus_);
+  toyChargedPlus_ = new TLorentzVector();
+  tree_->Branch("toyChargedPlus.","TLorentzVector",toyChargedPlus_);
   toyNeutralMinus_ = new TLorentzVector();
   tree_->Branch("toyNeutralMinus.","TLorentzVector",toyNeutralMinus_);
   toyNeutralPlus_ = new TLorentzVector();
@@ -134,6 +142,8 @@ MiniAODGenTauTauAnalyzer::~MiniAODGenTauTauAnalyzer(){
   delete met_;
   delete piMinus_;
   delete piPlus_;
+  delete chargedMinus_;
+  delete chargedPlus_;
   delete tauMinus_;
   delete tauPlus_;
   delete visTauMinus_;
@@ -142,6 +152,8 @@ MiniAODGenTauTauAnalyzer::~MiniAODGenTauTauAnalyzer(){
   delete toyPiPlus_;
   delete toyPiZeroMinus_;
   delete toyPiZeroPlus_;
+  delete toyChargedMinus_;
+  delete toyChargedPlus_;
   delete toyNeutralMinus_;
   delete toyNeutralPlus_;
   delete toyTauMinus_;
@@ -285,6 +297,8 @@ void MiniAODGenTauTauAnalyzer::analyze(const edm::Event& iEvent, const edm::Even
     tauMinus_->SetPxPyPzE(taus[0]->px(),taus[0]->py(),taus[0]->pz(),taus[0]->energy());
     reco::GenParticleRef piMinusRef = WawGenInfoHelper::getLeadChParticle(tauProdsMinus);
     piMinus_->SetPxPyPzE(piMinusRef->px(),piMinusRef->py(),piMinusRef->pz(),piMinusRef->energy());
+    WawGenInfoHelper::setP4Ptr(WawGenInfoHelper::getChargedP4(tauProdsMinus),
+			       chargedMinus_);
     WawGenInfoHelper::setP4Ptr(WawGenInfoHelper::getCombinedP4(tauProdsMinus),
 			     visTauMinus_);
     WawGenInfoHelper::getVertex(WawGenInfoHelper::getLeadChParticle(tauProdsMinus),svMinus_);
@@ -293,6 +307,8 @@ void MiniAODGenTauTauAnalyzer::analyze(const edm::Event& iEvent, const edm::Even
     tauPlus_->SetPxPyPzE(taus[1]->px(),taus[1]->py(),taus[1]->pz(),taus[1]->energy());
     reco::GenParticleRef piPlusRef = WawGenInfoHelper::getLeadChParticle(tauProdsPlus);
     piPlus_->SetPxPyPzE(piPlusRef->px(),piPlusRef->py(),piPlusRef->pz(),piPlusRef->energy());
+    WawGenInfoHelper::setP4Ptr(WawGenInfoHelper::getChargedP4(tauProdsPlus),
+			       chargedPlus_);
     WawGenInfoHelper::setP4Ptr(WawGenInfoHelper::getCombinedP4(tauProdsPlus),
 			       visTauPlus_);
     WawGenInfoHelper::getVertex(WawGenInfoHelper::getLeadChParticle(tauProdsPlus),svPlus_);
@@ -415,6 +431,7 @@ void MiniAODGenTauTauAnalyzer::analyze(const edm::Event& iEvent, const edm::Even
   treeVars_["outerMinus"]=(tauPair.first).outerPt;
   WawGenInfoHelper::setP4Ptr( (tauPair.first).p4, toyTauMinus_);
   WawGenInfoHelper::setP4Ptr( (tauPair.first).leadChP4, toyPiMinus_);
+  WawGenInfoHelper::setP4Ptr( (tauPair.first).chargedP4, toyChargedMinus_);
   WawGenInfoHelper::setP4Ptr( (tauPair.first).neutralP4, toyNeutralMinus_);
   WawGenInfoHelper::setP4Ptr( (tauPair.first).piZeroP4, toyPiZeroMinus_);
   WawGenInfoHelper::setV3Ptr( (tauPair.first).sv, toySvMinus_);
@@ -428,6 +445,7 @@ void MiniAODGenTauTauAnalyzer::analyze(const edm::Event& iEvent, const edm::Even
   treeVars_["outerPlus"]=(tauPair.second).outerPt;
   WawGenInfoHelper::setP4Ptr( (tauPair.second).p4, toyTauPlus_);
   WawGenInfoHelper::setP4Ptr( (tauPair.second).leadChP4, toyPiPlus_);
+  WawGenInfoHelper::setP4Ptr( (tauPair.second).chargedP4, toyChargedPlus_);
   WawGenInfoHelper::setP4Ptr( (tauPair.second).neutralP4, toyNeutralPlus_);
   WawGenInfoHelper::setP4Ptr( (tauPair.second).piZeroP4, toyPiZeroPlus_);
   WawGenInfoHelper::setV3Ptr( (tauPair.second).sv, toySvPlus_);
@@ -573,6 +591,8 @@ MiniAODGenTauTauAnalyzer::findTauPair(const reco::GenParticleCollection&  partic
 			 WawGenInfoHelper::tauDecayModes::tauDecayMuon);
 	visTau1.p4 = WawGenInfoHelper::getP4(lep_iso[i]);
 	visTau1.leadChP4 = visTau1.p4;
+	visTau1.chargedP4 = visTau1.p4;
+	visTau1.nCharged = 1;
 	visTau1.sv = WawGenInfoHelper::getVertex(lep_iso[i]);
 	visTau1.charge=lep_iso[i].charge();
 	visTau1.iso=WawGenInfoHelper::getGenIso(visTau1.p4, particles,0.4,0.001,0.);
@@ -581,6 +601,8 @@ MiniAODGenTauTauAnalyzer::findTauPair(const reco::GenParticleCollection&  partic
 			 WawGenInfoHelper::tauDecayModes::tauDecayMuon);
 	visTau2.p4 = WawGenInfoHelper::getP4(lep_iso[j]);
 	visTau2.leadChP4 = visTau2.p4;
+	visTau2.chargedP4 = visTau2.p4;
+	visTau2.nCharged = 1;
 	visTau2.sv = WawGenInfoHelper::getVertex(lep_iso[j]);
 	visTau2.charge=lep_iso[j].charge();
 	visTau2.iso=WawGenInfoHelper::getGenIso(visTau2.p4, particles,0.4,0.001,0.);
@@ -599,6 +621,8 @@ MiniAODGenTauTauAnalyzer::findTauPair(const reco::GenParticleCollection&  partic
 			 WawGenInfoHelper::tauDecayModes::tauDecayMuon);
 	visTau1.p4 = WawGenInfoHelper::getP4(lep_iso[i]);
 	visTau1.leadChP4 = visTau1.p4;
+	visTau1.chargedP4 = visTau1.p4;
+	visTau1.nCharged = 1;
 	visTau1.sv = WawGenInfoHelper::getVertex(lep_iso[i]);
 	visTau1.charge=lep_iso[i].charge();
 	visTau1.iso=WawGenInfoHelper::getGenIso(visTau1.p4, particles,0.4,0.001,0.);
@@ -608,6 +632,15 @@ MiniAODGenTauTauAnalyzer::findTauPair(const reco::GenParticleCollection&  partic
 				    tau_sel[j].leadPFChargedHadrCand()->py(),
 				    tau_sel[j].leadPFChargedHadrCand()->pz(),
 				    tau_sel[j].leadPFChargedHadrCand()->energy() );
+	for(unsigned int iZ=0; iZ<tau_sel[j].signalPFChargedHadrCands().size(); ++iZ){
+	  TLorentzVector chP4(tau_sel[j].signalPFChargedHadrCands()[iZ]->px(),
+			      tau_sel[j].signalPFChargedHadrCands()[iZ]->py(),
+			      tau_sel[j].signalPFChargedHadrCands()[iZ]->pz(),
+			      tau_sel[j].signalPFChargedHadrCands()[iZ]->energy()); 
+	  visTau2.chargedP4 += chP4; 
+	}
+	visTau2.nCharged=tau_sel[j].signalPFChargedHadrCands().size();
+
 	visTau2.nNeutral=0;
 	visTau2.nPiZero=0;
 	for(unsigned int iZ=0; iZ<tau_sel[j].signalPiZeroCandidates().size(); ++iZ){
@@ -629,7 +662,6 @@ MiniAODGenTauTauAnalyzer::findTauPair(const reco::GenParticleCollection&  partic
 	visTau2.charge=tau_sel[j].charge();
 	visTau2.iso=tau_sel[j].tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits");
 	visTau2.outerPt=tau_sel[j].tauID("photonPtSumOutsideSignalCone");
-	visTau2.nCharged=tau_sel[j].signalPFChargedHadrCands().size();
       }
     }
   }
@@ -646,6 +678,15 @@ MiniAODGenTauTauAnalyzer::findTauPair(const reco::GenParticleCollection&  partic
 				    tau_sel[i].leadPFChargedHadrCand()->py(),
 				    tau_sel[i].leadPFChargedHadrCand()->pz(),
 				    tau_sel[i].leadPFChargedHadrCand()->energy() );
+	for(unsigned int iZ=0; iZ<tau_sel[i].signalPFChargedHadrCands().size(); ++iZ){
+	  TLorentzVector chP4(tau_sel[i].signalPFChargedHadrCands()[iZ]->px(),
+			      tau_sel[i].signalPFChargedHadrCands()[iZ]->py(),
+			      tau_sel[i].signalPFChargedHadrCands()[iZ]->pz(),
+			      tau_sel[i].signalPFChargedHadrCands()[iZ]->energy()); 
+	  visTau1.chargedP4 += chP4; 
+	}
+	visTau1.nCharged=tau_sel[i].signalPFChargedHadrCands().size();
+
 	visTau1.nNeutral=0;
 	visTau1.nPiZero=0;
 	for(unsigned int iZ=0; iZ<tau_sel[i].signalPiZeroCandidates().size(); ++iZ){
@@ -666,13 +707,22 @@ MiniAODGenTauTauAnalyzer::findTauPair(const reco::GenParticleCollection&  partic
 	visTau1.charge=tau_sel[i].charge();
 	visTau1.iso=tau_sel[i].tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits");
 	visTau1.outerPt=tau_sel[i].tauID("photonPtSumOutsideSignalCone");
-	visTau1.nCharged=tau_sel[i].signalPFChargedHadrCands().size();
+
 	visTau2.decMode=tau_sel[j].decayMode();
 	visTau2.p4 = WawGenInfoHelper::getP4(tau_sel[j]);
 	visTau2.leadChP4.SetPxPyPzE(tau_sel[j].leadPFChargedHadrCand()->px(),
 				    tau_sel[j].leadPFChargedHadrCand()->py(),
 				    tau_sel[j].leadPFChargedHadrCand()->pz(),
 				    tau_sel[j].leadPFChargedHadrCand()->energy() );
+	for(unsigned int iZ=0; iZ<tau_sel[j].signalPFChargedHadrCands().size(); ++iZ){
+	  TLorentzVector chP4(tau_sel[j].signalPFChargedHadrCands()[iZ]->px(),
+			      tau_sel[j].signalPFChargedHadrCands()[iZ]->py(),
+			      tau_sel[j].signalPFChargedHadrCands()[iZ]->pz(),
+			      tau_sel[j].signalPFChargedHadrCands()[iZ]->energy()); 
+	  visTau2.chargedP4 += chP4; 
+	}
+	visTau2.nCharged=tau_sel[j].signalPFChargedHadrCands().size();
+
 	visTau2.nNeutral=0;
 	visTau2.nPiZero=0;
 	for(unsigned int iZ=0; iZ<tau_sel[j].signalPiZeroCandidates().size(); ++iZ){
@@ -693,7 +743,6 @@ MiniAODGenTauTauAnalyzer::findTauPair(const reco::GenParticleCollection&  partic
 	visTau2.charge=tau_sel[j].charge();
 	visTau2.iso=tau_sel[j].tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits");
 	visTau2.outerPt=tau_sel[j].tauID("photonPtSumOutsideSignalCone");
-	visTau2.nCharged=tau_sel[j].signalPFChargedHadrCands().size();
       }
     }
   }

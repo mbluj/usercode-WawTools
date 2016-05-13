@@ -44,11 +44,11 @@ class MiniAODGenTauTauAnalyzer : public edm::EDAnalyzer {
 
       // auxiliary struct declaration
       struct TVisTau{
-	TLorentzVector p4, leadChP4, neutralP4, piZeroP4;
+	TLorentzVector p4, leadChP4, chargedP4, neutralP4, piZeroP4;
 	int nCharged, nNeutral, nPiZero; 
 	TVector3 sv;
 	int charge, decMode;
-	double iso, outerPt; //FIXME: How define it for patTau (iso+1000*outerPt)? Two variables?
+	double iso, outerPt;
       };
 
    private:
@@ -79,11 +79,12 @@ class MiniAODGenTauTauAnalyzer : public edm::EDAnalyzer {
 	toyNChargedPlus_, toyNNeutralPlus_, toyNPiZeroPlus_;
 
       TLorentzVector *p4Sum_, *metNu_, *met_;
-      TLorentzVector *piMinus_, *piPlus_;
+      TLorentzVector *piMinus_, *piPlus_, *chargedMinus_, *chargedPlus_;
       TLorentzVector *tauMinus_, *tauPlus_;
       TLorentzVector *visTauMinus_, *visTauPlus_;
       TLorentzVector *toyPiMinus_, *toyPiPlus_;
       TLorentzVector *toyNeutralMinus_, *toyNeutralPlus_;
+      TLorentzVector *toyChargedMinus_, *toyChargedPlus_;
       TLorentzVector *toyPiZeroMinus_, *toyPiZeroPlus_;
       TLorentzVector *toyTauMinus_, *toyTauPlus_;
 
