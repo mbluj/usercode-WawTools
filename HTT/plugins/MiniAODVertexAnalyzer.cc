@@ -27,7 +27,7 @@
 
 #include "DataFormats/Math/interface/deltaR.h"
 
-//#include "DataFormats/​GeometryVector/​interface/​LocalPoint.h"
+//#include "DataFormats/GeometryVector/interface/LocalPoint.h"
 
 
 MiniAODVertexAnalyzer::MiniAODVertexAnalyzer(const edm::ParameterSet & iConfig) :
@@ -156,6 +156,7 @@ bool MiniAODVertexAnalyzer::getGenData(const edm::Event & iEvent, const edm::Eve
   WawGenInfoHelper::getVertex(WawGenInfoHelper::getLeadChParticle(tauProdsMinus),&myEvent_->genEvent_.svMinus_);
   WawGenInfoHelper::impactParameter(myEvent_->genEvent_.thePV_, myEvent_->genEvent_.svMinus_,
 				    myEvent_->genEvent_.piMinus_, &myEvent_->genEvent_.nPiMinus_);
+  myEvent_->genEvent_.dzMinus_ = (myEvent_->genEvent_.svMinus_.Z() - myEvent_->genEvent_.thePV_.Z()) - ((myEvent_->genEvent_.svMinus_.X() - myEvent_->genEvent_.thePV_.X()) * myEvent_->genEvent_.piMinus_.Px() + (myEvent_->genEvent_.svMinus_.Y() - myEvent_->genEvent_.thePV_.Y()) * myEvent_->genEvent_.piMinus_.Py()) / myEvent_->genEvent_.piMinus_.Pt() * myEvent_->genEvent_.piMinus_.Pz() / myEvent_->genEvent_.piMinus_.Pt();
 
   myEvent_->genEvent_.decModePlus_ = WawGenInfoHelper::getTausDecays(taus[1],tauProdsPlus,true,false);
   myEvent_->genEvent_.tauPlus_.SetPtEtaPhiE(taus[1]->pt(),taus[1]->eta(),taus[1]->phi(),taus[1]->energy());
@@ -167,6 +168,7 @@ bool MiniAODVertexAnalyzer::getGenData(const edm::Event & iEvent, const edm::Eve
   WawGenInfoHelper::getVertex(WawGenInfoHelper::getLeadChParticle(tauProdsPlus),&myEvent_->genEvent_.svPlus_);
   WawGenInfoHelper::impactParameter(myEvent_->genEvent_.thePV_, myEvent_->genEvent_.svPlus_,
 				    myEvent_->genEvent_.piPlus_, &myEvent_->genEvent_.nPiPlus_);
+  myEvent_->genEvent_.dzPlus_ = (myEvent_->genEvent_.svPlus_.Z() - myEvent_->genEvent_.thePV_.Z()) - ((myEvent_->genEvent_.svPlus_.X() - myEvent_->genEvent_.thePV_.X()) * myEvent_->genEvent_.piPlus_.Px() + (myEvent_->genEvent_.svPlus_.Y() - myEvent_->genEvent_.thePV_.Y()) * myEvent_->genEvent_.piPlus_.Py()) / myEvent_->genEvent_.piPlus_.Pt() * myEvent_->genEvent_.piPlus_.Pz() / myEvent_->genEvent_.piPlus_.Pt();
   
   WawGenInfoHelper::setP4Ptr(myEvent_->genEvent_.tauMinus_+myEvent_->genEvent_.tauPlus_,
 			     &myEvent_->genEvent_.p4Sum_);
@@ -208,8 +210,7 @@ bool  MiniAODVertexAnalyzer::refitPV(const edm::Event & iEvent, const edm::Event
   int vtxIdx = 0; //AOD PV
   reco::TrackCollection pvTracks;
   for(size_t i=0; i<cands->size(); ++i){
-    if((*cands)[i].charge()==0 || (*cands)[i].vertexRef().isNull()) continue;
-    if(!(*cands)[i].bestTrack()) continue;
+    if(!(*cands)[i].bestTrack() || (*cands)[i].vertexRef().isNull()) continue;
     ///Skip tracks comming from tau decay.
     bool skipTrack = false;
     if(!useTauTracks_){
@@ -243,8 +244,7 @@ bool  MiniAODVertexAnalyzer::refitPV(const edm::Event & iEvent, const edm::Event
   }
   if(useLostCands_){
     for(size_t i=0; i<lostCands->size(); ++i){
-      if((*lostCands)[i].charge()==0 || (*lostCands)[i].vertexRef().isNull()) continue;
-      if(!(*lostCands)[i].bestTrack()) continue;
+      if(!(*lostCands)[i].bestTrack() || (*lostCands)[i].vertexRef().isNull()) continue;
       ///Skip tracks comming from tau decay.
       bool skipTrack = false;
       if(!useTauTracks_){
@@ -364,42 +364,44 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
 	       <<" null: "<<(*cands)[i].vertexRef().isNull()
 	//<<" nonull: "<<(*cands)[i].vertexRef().isNonnull()
 	       <<" charge: "<<(*cands)[i].charge()
+	       <<" pdgId: "<<(*cands)[i].pdgId()
 	//<<" key: "<<(*cands)[i].vertexRef().key()
 	//<<" fromPV: "<<(*cands)[i].fromPV()
 	       <<std::endl;
     }
 
-    if((*cands)[i].charge()==0 || (*cands)[i].vertexRef().isNull()) continue;
-      size_t key = (*cands)[i].vertexRef().key();
-      int quality = (*cands)[i].pvAssociationQuality();
-      if( quality!=pat::PackedCandidate::UsedInFitTight  &&
-	  quality!=pat::PackedCandidate::UsedInFitLoose) continue;
-	if((*cands)[i].bestTrack()){
-	  float pT = (*cands)[i].bestTrack()->pt();
-	  float epT=(*cands)[i].bestTrack()->ptError(); 
-	  pT=pT>epT ? pT-epT : 0;
-	  pt2Scores[key]+=pT*pT;
-	  pt2ScoresAllTracks[key]+=pT*pT;	  
-	}
-	else { //should happen for tracks pT<0.95
-	  float pT = (*cands)[i].pt();
-	  //estimate pT error (basing on avarage numbers from TRK-11-001, JINST 9 (2014), P10009
-	  float epT=0;
-	  if(std::abs((*cands)[i].eta())<0.9) epT=0.01*pT;
-	  else if(std::abs((*cands)[i].eta())<1.4) epT=0.02*pT;
-	  else epT=0.025*pT;
-	  if(pT>90) epT*=2; //for high-Pt assume bigger error (just to be safe)
-	  if(pT>1){
-	    std::cout<<"Something unexpected: Pt="<<pT
-		     <<", eta="<<(*cands)[i].eta()
-		     <<", charge="<<(*cands)[i].charge()
-		     <<", pdgId="<<(*cands)[i].pdgId()
-		     <<", (*cands)[i].bestTrack(): "<<(*cands)[i].bestTrack()
-		     <<std::endl;
-	  }
-	  pT=pT>epT ? pT-epT : 0;
-	  pt2ScoresAllTracks[key]+=pT*pT;
-	}
+    if((*cands)[i].charge()==0 || !(*cands)[i].bestTrack() || (*cands)[i].vertexRef().isNull()) continue;
+    size_t key = (*cands)[i].vertexRef().key();
+    int quality = (*cands)[i].pvAssociationQuality();
+    if( quality!=pat::PackedCandidate::UsedInFitTight  &&
+	quality!=pat::PackedCandidate::UsedInFitLoose) continue;
+    if((*cands)[i].bestTrack()){
+      float pT = (*cands)[i].bestTrack()->pt();
+      float epT=(*cands)[i].bestTrack()->ptError(); 
+      pT=pT>epT ? pT-epT : 0;
+      pt2Scores[key]+=pT*pT;
+      pt2ScoresAllTracks[key]+=pT*pT;	  
+    }
+    else { //should happen for tracks pT<0.95
+      float pT = (*cands)[i].pt();
+      if(pT>1 && std::abs((*cands)[i].pdgId())==13) continue;//most probably STA Muons
+      //estimate pT error (basing on avarage numbers from TRK-11-001, JINST 9 (2014), P10009
+      float epT=0;
+      if(std::abs((*cands)[i].eta())<0.9) epT=0.01*pT;
+      else if(std::abs((*cands)[i].eta())<1.4) epT=0.02*pT;
+      else epT=0.025*pT;
+      if(pT>90) epT*=2; //for high-Pt assume bigger error (just to be safe)
+      if(pT>1){
+	std::cout<<"Something unexpected: Pt="<<pT
+		 <<", eta="<<(*cands)[i].eta()
+		 <<", charge="<<(*cands)[i].charge()
+		 <<", pdgId="<<(*cands)[i].pdgId()
+		 <<", (*cands)[i].bestTrack(): "<<(*cands)[i].bestTrack()
+		 <<std::endl;
+      }
+      pT=pT>epT ? pT-epT : 0;
+      pt2ScoresAllTracks[key]+=pT*pT;
+    }
   }
   size_t iOldVtx1=0, iOldVtx2=0;
   float pt2Score=-1, pt2ScoreAllTracks=-1;
@@ -421,6 +423,20 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
   myEvent_->recoEvent_.pt2PVindex_=iOldVtx2;
   iOldVtx1+=0;//hack to avoid compilation errors -Werror=unused-but-set-variable
 
+  //Find vertex with smallest dz distance wrt genPV
+  //and store as pfPV in the gen event
+  size_t iGenVtx=0;
+  float dzMin=9999;
+  for(size_t iVx=0; iVx<vertices->size(); ++iVx){
+    float dz = std::abs( (*vertices)[iVx].z() - myEvent_->genEvent_.thePV_.Z() );
+    if( dz < dzMin){
+      dzMin=dz;
+      iGenVtx=iVx;
+    }
+  }
+  myEvent_->genEvent_.pfPV_.SetXYZ((*vertices)[iGenVtx].x(),(*vertices)[iGenVtx].y(),(*vertices)[iGenVtx].z());
+  myEvent_->genEvent_.pfPVIndex_=iGenVtx;
+
   return true;
 }
 /////////////////////////////////////////////////////////////////
@@ -434,35 +450,60 @@ bool MiniAODVertexAnalyzer::findRecoTau(const edm::Event & iEvent, const edm::Ev
   thePair_ = findTauPair(tauColl);
   if(!thePair_.first || !thePair_.second) return false;
 
+  myEvent_->recoEvent_.isoMVAWpPlus_ = 0;
+  if(thePair_.first->tauID("byVLooseIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpPlus_ = 1;
+  if(thePair_.first->tauID("byLooseIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpPlus_ = 2;
+  if(thePair_.first->tauID("byMediumIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpPlus_ = 3;
+  if(thePair_.first->tauID("byTightIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpPlus_ = 4;
+  if(thePair_.first->tauID("byVTightIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpPlus_ = 5;
+  if(thePair_.first->tauID("byVVTightIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpPlus_ = 6;
+  myEvent_->recoEvent_.isoMVAWpMinus_ = 0;
+  if(thePair_.second->tauID("byVLooseIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpMinus_ = 1;
+  if(thePair_.second->tauID("byLooseIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpMinus_ = 2;
+  if(thePair_.second->tauID("byMediumIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpMinus_ = 3;
+  if(thePair_.second->tauID("byTightIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpMinus_ = 4;
+  if(thePair_.second->tauID("byVTightIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpMinus_ = 5;
+  if(thePair_.second->tauID("byVVTightIsolationMVArun2v1DBoldDMwLT") > 0.5)
+     myEvent_->recoEvent_.isoMVAWpMinus_ = 6;
   myEvent_->recoEvent_.decModePlus_ = thePair_.first->decayMode();
   myEvent_->recoEvent_.decModeMinus_ = thePair_.second->decayMode();
-    
+  
+  myEvent_->recoEvent_.dzPlus_ = dynamic_cast<pat::PackedCandidate const*>(thePair_.first->leadChargedHadrCand().get())->dz();
+  myEvent_->recoEvent_.dzMinus_ = dynamic_cast<pat::PackedCandidate const*>(thePair_.second->leadChargedHadrCand().get())->dz();
+  
   myEvent_->recoEvent_.visTauPlus_ = TLorentzVector(thePair_.first->p4().Px(),
-					    thePair_.first->p4().Py(),
-					    thePair_.first->p4().Pz(),
-					    thePair_.first->p4().E());
+						    thePair_.first->p4().Py(),
+						    thePair_.first->p4().Pz(),
+						    thePair_.first->p4().E());
   
    myEvent_->recoEvent_.visTauMinus_ = TLorentzVector(thePair_.second->p4().Px(),
-					  thePair_.second->p4().Py(),
-					  thePair_.second->p4().Pz(),
-					  thePair_.second->p4().E());
+						      thePair_.second->p4().Py(),
+						      thePair_.second->p4().Pz(),
+						      thePair_.second->p4().E());
    
    myEvent_->recoEvent_.tauPlus_ = myEvent_->recoEvent_.visTauPlus_;
    myEvent_->recoEvent_.tauMinus_ = myEvent_->recoEvent_.visTauMinus_;
   
    myEvent_->recoEvent_.piPlus_ = TLorentzVector(thePair_.first->leadChargedHadrCand()->p4().px(),
-					  thePair_.first->leadChargedHadrCand()->p4().py(),
-					  thePair_.first->leadChargedHadrCand()->p4().pz(),
-					  thePair_.first->leadChargedHadrCand()->p4().e());
+						 thePair_.first->leadChargedHadrCand()->p4().py(),
+						 thePair_.first->leadChargedHadrCand()->p4().pz(),
+						 thePair_.first->leadChargedHadrCand()->p4().e());
    
    myEvent_->recoEvent_.piMinus_ = TLorentzVector(thePair_.second->leadChargedHadrCand()->p4().px(),
-					   thePair_.second->leadChargedHadrCand()->p4().py(),
-					   thePair_.second->leadChargedHadrCand()->p4().pz(),
-					   thePair_.second->leadChargedHadrCand()->p4().e());
-
-  
-
-   
+						  thePair_.second->leadChargedHadrCand()->p4().py(),
+						  thePair_.second->leadChargedHadrCand()->p4().pz(),
+						  thePair_.second->leadChargedHadrCand()->p4().e());
      
   return true;
 }
@@ -573,10 +614,12 @@ std::pair<const pat::Tau*, const pat::Tau*> MiniAODVertexAnalyzer::findTauPair(e
   /*find a most isolated opposite-sign pair */
   std::vector<const pat::Tau*> taus;
   for(unsigned int i=0; i<tauColl->size(); ++i){
-    if( (*tauColl)[i].tauID("decayModeFinding")>0.5 
-	&& (*tauColl)[i].tauID("photonPtSumOutsideSignalCone") < 0.1 * (*tauColl)[i].pt()
-	&& (*tauColl)[i].tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") < 3.0 //Loose <2.5, Medium<1.5, Tight<0.8
-	
+    if( (*tauColl)[i].tauID("decayModeFinding")>0.5
+	&& (*tauColl)[i].pt()>20 && std::abs((*tauColl)[i].eta())<2.3
+	&& std::abs(dynamic_cast<pat::PackedCandidate const*>((*tauColl)[i].leadChargedHadrCand().get())->dz()) < 0.2
+	//&& (*tauColl)[i].tauID("photonPtSumOutsideSignalCone") < 0.1 * (*tauColl)[i].pt()
+	//&& (*tauColl)[i].tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") < 3.0 //Loose <2.5, Medium<1.5, Tight<0.8
+	&& (*tauColl)[i].tauID("byVLooseIsolationMVArun2v1DBoldDMwLT") > 0.5
 	)
       taus.push_back(&(*tauColl)[i]);
   }
@@ -584,8 +627,10 @@ std::pair<const pat::Tau*, const pat::Tau*> MiniAODVertexAnalyzer::findTauPair(e
   std::sort(taus.begin(), taus.end(),
 	    [](const pat::Tau* a, const pat::Tau* b){
 	      //return a->pt() > b->pt();
-	      return a->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") < 
-		b->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits");
+	      //return a->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") < 
+	      //       b->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits");
+	      return a->tauID("byIsolationMVArun2v1DBoldDMwLTraw") >
+		     b->tauID("byIsolationMVArun2v1DBoldDMwLTraw");
 	    });
   for(unsigned int i=1; i<taus.size(); ++i){
     if(deltaR2(taus[0]->p4(),taus[i]->p4())>0.3*0.3 &&

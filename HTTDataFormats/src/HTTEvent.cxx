@@ -40,6 +40,9 @@ void DiTauData::clear(){
   decModePlus_  = 99;
 #endif
 
+  dzPlus_ = 99;
+  dzMinus_ = 99;
+
   thePV_ = TVector3();
   svMinus_ = TVector3();
   svPlus_ = TVector3();
@@ -64,6 +67,9 @@ void DiTauData::clear(){
   
   pfPVIndex_  = -1;
   pt2PVindex_ = -1;
+
+  isoMVAWpMinus_ = 0;
+  isoMVAWpPlus_ = 0;
    
 }
 //////////////////////////////////////////////

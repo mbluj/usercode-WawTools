@@ -13,8 +13,8 @@ process.load("Configuration.Geometry.GeometryRecoDB_cff")
 process.load("Configuration.StandardSequences.MagneticField_38T_PostLS1_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
-#process.GlobalTag.globaltag = 'MCRUN2_71_V1' #as MiniAOD
+#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
+process.GlobalTag.globaltag = '92X_upgrade2017_realistic_v7' #as MiniAOD
 
 process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 
@@ -39,11 +39,12 @@ ATauTauFileNames = cms.untracked.vstring("file:/home/akalinow/scratch/CMS/HiggsC
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
         #"root://cms-xrd-global.cern.ch//store/mc/RunIISpring15DR74/SUSYGluGluToHToTauTau_M-120_TuneCUETP8M1_13TeV-pythia8/MINIAODSIM/Asympt25ns_MCRUN2_74_V9-v1/10000/2C871A0B-3303-E511-B8D0-0025B3E05D74.root"
+        'root://cms-xrd-global.cern.ch//store/mc/RunIISummer17MiniAOD/GluGluHToTauTau_M125_13TeV_powheg_pythia8/MINIAODSIM/92X_upgrade2017_realistic_v10-v2/10000/08A92128-519D-E711-8902-7CD30ACE159A.root'
 	)
 )
 
 #process.source.fileNames = DYfileNames
-process.source.fileNames = HTauTauFileNames
+#process.source.fileNames = HTauTauFileNames
 #process.source.fileNames.append(HTauTauFileNames[0])
 #process.source.fileNames.append(ATauTauFileNames[0])
 
@@ -83,14 +84,18 @@ process.vtxAna = cms.EDAnalyzer(
     beamSpot = cms.InputTag("offlineBeamSpot"),
     taus = cms.InputTag("slimmedTaus"),
     useBeamSpot = cms.bool(True),
-    useLostCands = cms.bool(False),
-    useTauTracks = cms.untracked.bool(False),
+    useLostCands = cms.bool(True),
+    useTauTracks = cms.untracked.bool(True),
     verbose = cms.untracked.bool(False),
+)
+process.vtxAnaNoTauTracks = process.vtxAna.clone(
+    useTauTracks = cms.untracked.bool(False)
 )
 
 process.p = cms.Path(
     process.printTree+
     process.vtxAna
+    +process.vtxAnaNoTauTracks
 )
 
 process.TFileService = cms.Service(
