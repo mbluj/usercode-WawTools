@@ -30,6 +30,16 @@ void HTTEvent::clear(){
 }
 //////////////////////////////////////////////
 //////////////////////////////////////////////
+DiTauData::DiTauData() : 
+  pfScore_(3), pt2Score_(2), dzVtx_(2){
+  
+  clear();
+}
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+DiTauData::~DiTauData(){}
+//////////////////////////////////////////////
+//////////////////////////////////////////////
 void DiTauData::clear(){
 
 #ifdef PROJECT_NAME
@@ -68,9 +78,18 @@ void DiTauData::clear(){
   pfPVIndex_  = -1;
   pt2PVindex_ = -1;
 
+  nPV_ = 0;
+  for(size_t i=0; i<pfScore_.size(); ++i) pfScore_[i]=0; 
+  for(size_t i=0; i<pt2Score_.size(); ++i) pt2Score_[i]=0; 
+  for(size_t i=0; i<dzVtx_.size(); ++i) dzVtx_[i]=0; 
+
   isoMVAWpMinus_ = 0;
   isoMVAWpPlus_ = 0;
-   
+
+  pt2Sum_ = 0;
+  ptThrust_ = 0;
+  ptBalance_ = 99;
+
 }
 //////////////////////////////////////////////
 //////////////////////////////////////////////

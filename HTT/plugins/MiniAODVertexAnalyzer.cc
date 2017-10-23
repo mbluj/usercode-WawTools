@@ -184,6 +184,7 @@ bool  MiniAODVertexAnalyzer::getRecoData(const edm::Event & iEvent, const edm::E
 
   refitPV(iEvent, iSetup);
   setPCAVectors(iEvent, iSetup);
+  getPVBalance(iEvent, iSetup,0);
 
   return hasAnyVx && hasRecoTau;
 }
@@ -331,13 +332,17 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
   if(vertices->size()==0) return false;   //at least one vertex
   myEvent_->recoEvent_.thePV_.SetXYZ((*vertices)[0].x(),(*vertices)[0].y(),(*vertices)[0].z());
 
+  myEvent_->recoEvent_.nPV_ = vertices->size();
+
   //Find vertex with highest score with PF (miniAOD like)
   //miniAOD uses PF particles instead of tracks
   size_t iPfVtx=0;
   float score=-1;
   for(size_t iVx=0; iVx<vertices->size(); ++iVx){
     reco::VertexRef vtxPrt(vertices,iVx);   
-    if( (*scores)[vtxPrt] > score){
+    float aScore = (*scores)[vtxPrt];
+    if(iVx < myEvent_->recoEvent_.pfScore_.size()) myEvent_->recoEvent_.pfScore_[iVx] = aScore;
+    if(aScore > score){
       score = (*scores)[vtxPrt];
       iPfVtx=iVx;
     }
@@ -356,7 +361,8 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
   
   for(size_t i=0; i<cands->size(); ++i){
 
-    if((*cands)[i].charge()!=0 &&
+    if(verbose_ &&
+       (*cands)[i].charge()!=0 &&
        (*cands)[i].bestTrack() &&
        (*cands)[i].bestTrack()->pt()>2000){
       std::cout<<"Here "
@@ -370,7 +376,7 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
 	       <<std::endl;
     }
 
-    if((*cands)[i].charge()==0 || !(*cands)[i].bestTrack() || (*cands)[i].vertexRef().isNull()) continue;
+    if( ( (*cands)[i].charge()==0 && !(*cands)[i].bestTrack() ) || (*cands)[i].vertexRef().isNull()) continue;
     size_t key = (*cands)[i].vertexRef().key();
     int quality = (*cands)[i].pvAssociationQuality();
     if( quality!=pat::PackedCandidate::UsedInFitTight  &&
@@ -396,7 +402,7 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
 		 <<", eta="<<(*cands)[i].eta()
 		 <<", charge="<<(*cands)[i].charge()
 		 <<", pdgId="<<(*cands)[i].pdgId()
-		 <<", (*cands)[i].bestTrack(): "<<(*cands)[i].bestTrack()
+	  //<<", (*cands)[i].bestTrack(): "<<(*cands)[i].bestTrack()
 		 <<std::endl;
       }
       pT=pT>epT ? pT-epT : 0;
@@ -417,6 +423,8 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
       pt2ScoreAllTracks = it->second;
       iOldVtx2 = it->first;
     }
+    if(it->first<myEvent_->recoEvent_.pt2Score_.size())
+      myEvent_->recoEvent_.pt2Score_[it->first]=it->second;
   }
 
   myEvent_->recoEvent_.pt2PV_.SetXYZ((*vertices)[iOldVtx2].x(),(*vertices)[iOldVtx2].y(),(*vertices)[iOldVtx2].z());
@@ -436,6 +444,10 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
   }
   myEvent_->genEvent_.pfPV_.SetXYZ((*vertices)[iGenVtx].x(),(*vertices)[iGenVtx].y(),(*vertices)[iGenVtx].z());
   myEvent_->genEvent_.pfPVIndex_=iGenVtx;
+
+  //vtx dz
+  if(vertices->size()>1) myEvent_->recoEvent_.dzVtx_[0] = (*vertices)[1].z() - (*vertices)[0].z();
+  if(vertices->size()>2) myEvent_->recoEvent_.dzVtx_[1] = (*vertices)[2].z() - (*vertices)[0].z();
 
   return true;
 }
@@ -644,6 +656,103 @@ std::pair<const pat::Tau*, const pat::Tau*> MiniAODVertexAnalyzer::findTauPair(e
   }
 
   return myPair;
+}
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+bool  MiniAODVertexAnalyzer::getPVBalance(const edm::Event & iEvent, const edm::EventSetup & iSetup, size_t iPV){
+
+  edm::Handle<edm::View<pat::PackedCandidate> >  cands;
+  iEvent.getByToken(cands_, cands);
+  edm::Handle<edm::View<pat::PackedCandidate> >  lostCands;
+  if(useLostCands_) iEvent.getByToken(lostCands_, lostCands);
+  edm::Handle<reco::VertexCollection> vertices;
+  iEvent.getByToken(vertices_, vertices);
+
+  //Get tracks associated with iPV
+  TVector3 diTauPt;
+  if(thePair_.first && thePair_.second){
+    float px = thePair_.first->px()+thePair_.second->px();
+    float py = thePair_.first->py()+thePair_.second->py();
+    diTauPt.SetXYZ(px,py,0);
+  }
+  float pt2Sum=0, ptSum=0, ptThrust=0;
+  for(size_t i=0; i<cands->size(); ++i){
+    if((*cands)[i].charge()==0 || !(*cands)[i].bestTrack() || (*cands)[i].vertexRef().isNull()) continue;
+    ///Skip tracks comming from tau decay.
+    bool skipTrack = false;
+    if(thePair_.first && thePair_.second){
+      for(size_t j=0 ; j<thePair_.first->signalChargedHadrCands().size(); ++j){
+	if(deltaR2(thePair_.first->signalChargedHadrCands()[j]->p4(),(*cands)[i].p4())<0.001*0.001
+	   && std::abs(thePair_.first->signalChargedHadrCands()[j]->pt()/(*cands)[i].pt()-1.)<0.001
+	   ){
+	  skipTrack = true;
+	  break;
+	}
+      }
+      for(size_t j=0 ; j<thePair_.second->signalChargedHadrCands().size(); ++j){
+	if(deltaR2(thePair_.second->signalChargedHadrCands()[j]->p4(),(*cands)[i].p4())<0.001*0.001
+	   && std::abs(thePair_.second->signalChargedHadrCands()[j]->pt()/(*cands)[i].pt()-1.)<0.001
+	   ){
+	  skipTrack = true;
+	  break;
+	}
+      }
+    }
+    if(skipTrack) continue;
+    size_t key = (*cands)[i].vertexRef().key();
+    int quality = (*cands)[i].pvAssociationQuality();
+    if(key!=iPV ||
+       (quality!=pat::PackedCandidate::UsedInFitTight &&
+	quality!=pat::PackedCandidate::UsedInFitLoose)) continue;
+
+    pt2Sum += (*cands)[i].pt() * (*cands)[i].pt();
+    ptSum += (*cands)[i].pt();
+    TVector3 aPt((*cands)[i].px(),(*cands)[i].py(),0);
+    ptThrust -= aPt * diTauPt.Unit();
+  }
+  if(useLostCands_){
+    for(size_t i=0; i<lostCands->size(); ++i){
+      if( ( (*cands)[i].charge()==0 && !(*lostCands)[i].bestTrack() ) || (*lostCands)[i].vertexRef().isNull()) continue;
+      ///Skip tracks comming from tau decay.
+      bool skipTrack = false;
+      if(thePair_.first && thePair_.second){
+	for(size_t j=0 ; j<thePair_.first->signalChargedHadrCands().size(); ++j){
+	  if(deltaR2(thePair_.first->signalChargedHadrCands()[j]->p4(),(*lostCands)[i].p4())<0.001*0.001
+	     && std::abs(thePair_.first->signalChargedHadrCands()[j]->pt()/(*lostCands)[i].pt()-1.)<0.001
+	     ){
+	    skipTrack = true;
+	    break;
+	  }
+	}
+	for(size_t j=0 ; j<thePair_.second->signalChargedHadrCands().size(); ++j){
+	  if(deltaR2(thePair_.second->signalChargedHadrCands()[j]->p4(),(*lostCands)[i].p4())<0.001*0.001
+	     && std::abs(thePair_.second->signalChargedHadrCands()[j]->pt()/(*lostCands)[i].pt()-1.)<0.001
+	     ){
+	    skipTrack = true;
+	    break;
+	  }
+	}
+      }
+      if(skipTrack) continue;
+      size_t key = (*lostCands)[i].vertexRef().key();
+      int quality = (*lostCands)[i].pvAssociationQuality();
+      if(key!=iPV ||
+	 (quality!=pat::PackedCandidate::UsedInFitTight &&
+	  quality!=pat::PackedCandidate::UsedInFitLoose)) continue;
+
+      pt2Sum += (*cands)[i].pt() * (*cands)[i].pt();
+      ptSum += (*cands)[i].pt();
+      TVector3 aPt((*cands)[i].px(),(*cands)[i].py(),0);
+      ptThrust -= aPt * diTauPt.Unit();
+    }
+  }
+  
+
+  myEvent_->recoEvent_.pt2Sum_=pt2Sum;
+  myEvent_->recoEvent_.ptThrust_=ptThrust;
+  myEvent_->recoEvent_.ptBalance_= (ptSum - diTauPt.Pt())/(ptSum + diTauPt.Pt());
+  
+  return true;
 }
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////

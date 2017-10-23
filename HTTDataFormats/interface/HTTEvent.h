@@ -12,6 +12,9 @@ class DiTauData{
 
  public:
 
+  DiTauData();
+  ~DiTauData();
+
   ///Data common for generator and reconstruction levels.
   int decModeMinus_, decModePlus_;
   float dzMinus_, dzPlus_;
@@ -33,8 +36,15 @@ class DiTauData{
   int nTracksInRefit_;
   int pfPVIndex_, pt2PVindex_;
 
-  int isoMVAWpMinus_, isoMVAWpPlus_;
+  int nPV_;
   
+  std::vector<float> pfScore_, pt2Score_;
+  std::vector<float> dzVtx_;
+
+  int isoMVAWpMinus_, isoMVAWpPlus_;
+
+  float pt2Sum_, ptThrust_, ptBalance_;
+
   ///Generator level only data
 
 

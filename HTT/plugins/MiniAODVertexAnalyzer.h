@@ -80,6 +80,9 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     TVector3 getPCA(const edm::Event & iEvent, const edm::EventSetup & iSetup,
 		    const pat::Tau* aTau,
 		    const GlobalPoint & aPoint);
+
+    bool getPVBalance(const edm::Event & iEvent, const edm::EventSetup & iSetup, 
+		      size_t iPV=0);
     
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
