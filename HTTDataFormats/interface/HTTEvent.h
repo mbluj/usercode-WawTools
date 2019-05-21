@@ -29,19 +29,25 @@ class DiTauData{
   TLorentzVector piMinus_, piPlus_;
   TLorentzVector tauMinus_, tauPlus_;
   TLorentzVector visTauMinus_, visTauPlus_;
+  TLorentzVector pi0Minus_, pi0Plus_;
 
   ///Reconstruction level only data
   TVector3 pfPV_, pt2PV_, refitPfPV_, refitPfPVNoBS_;
   bool isRefit_;
   int nTracksInRefit_;
   int pfPVIndex_, pt2PVindex_;
+  int leadIdMinus_, leadIdPlus_;
+  int nGammaMinus_, nGammaPlus_;
+  int nGammaInConeMinus_, nGammaInConePlus_;
 
-  int nPV_;
-  
   std::vector<float> pfScore_, pt2Score_;
   std::vector<float> dzVtx_;
 
+  float isoMinus_, isoPlus_;
   int isoMVAWpMinus_, isoMVAWpPlus_;
+  int antiEWpMinus_, antiEWpPlus_;
+  int antiMuWpMinus_, antiMuWpPlus_;
+  int matchedMinus_, matchedPlus_;
 
   float pt2Sum_, ptThrust_, ptBalance_;
 
@@ -66,6 +72,9 @@ class HTTEvent {
   
   float run_, lumi_, event_;
   int bosonId_;
+
+  int nPV_;
+  bool diMuonVeto_;
 
   DiTauData genEvent_, recoEvent_;
     

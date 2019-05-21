@@ -453,6 +453,21 @@ namespace WawGenInfoHelper {
     return p4;
   }
   //////////////
+  TLorentzVector getNeutralP4(const reco::GenParticleRefVector& products,
+			      bool ignoreNus){
+    
+    TLorentzVector p4;
+    
+    for(IGR idr = products.begin(); idr != products.end(); ++idr ){
+      if(std::abs( (*idr)->charge() )<0.001 && //MB: GenParts have defined charge
+	 (!ignoreNus || ((*idr)->pdgId()!=12 && (*idr)->pdgId()!=14 && (*idr)->pdgId()!=16) )
+	 ){
+	p4 += getP4( *idr );
+      }
+    }
+    return p4;
+  }
+  //////////////
   TLorentzVector getLeadChParticleP4(const reco::GenParticleRefVector& products){
     return getP4( getLeadChParticle(products) );
   }

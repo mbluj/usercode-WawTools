@@ -51,6 +51,8 @@ namespace WawGenInfoHelper {
   TLorentzVector getCombinedP4(const reco::GenParticleRefVector& products);
   TLorentzVector getLeadChParticleP4(const reco::GenParticleRefVector& products);
   TLorentzVector getChargedP4(const reco::GenParticleRefVector& products);
+  TLorentzVector getNeutralP4(const reco::GenParticleRefVector& products,
+			      bool ignoreNus=true);
   TVector3 getVertex(const reco::GenParticleRef& part);
   TVector3 getVertex(const reco::GenParticle& part);
   void getVertex(const reco::GenParticleRef& part, TVector3 *vtx);

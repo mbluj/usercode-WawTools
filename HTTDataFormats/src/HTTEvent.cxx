@@ -24,6 +24,9 @@ void HTTEvent::clear(){
   event_ = -999;
   bosonId_ = 0;
 
+  nPV_ = 0;
+  diMuonVeto_ = false;
+
   genEvent_.clear();
   recoEvent_.clear();
 
@@ -64,6 +67,8 @@ void DiTauData::clear(){
   piPlus_ = TLorentzVector();
   tauMinus_ = TLorentzVector();
   tauPlus_ = TLorentzVector();
+  pi0Minus_ = TLorentzVector();
+  pi0Plus_ = TLorentzVector();
   visTauMinus_ = TLorentzVector();
   visTauPlus_ = TLorentzVector();
 
@@ -78,13 +83,27 @@ void DiTauData::clear(){
   pfPVIndex_  = -1;
   pt2PVindex_ = -1;
 
-  nPV_ = 0;
+  leadIdMinus_ = 0;
+  leadIdPlus_ = 0;
+
+  nGammaMinus_ = nGammaPlus_ = 0;
+  nGammaInConeMinus_ = nGammaInConePlus_ = 0;
+
   for(size_t i=0; i<pfScore_.size(); ++i) pfScore_[i]=0; 
   for(size_t i=0; i<pt2Score_.size(); ++i) pt2Score_[i]=0; 
   for(size_t i=0; i<dzVtx_.size(); ++i) dzVtx_[i]=0; 
 
+  isoMinus_ = 999;
+  isoPlus_ = 999;
+
   isoMVAWpMinus_ = 0;
   isoMVAWpPlus_ = 0;
+
+  antiEWpMinus_  = antiEWpPlus_  = 0;
+  antiMuWpMinus_ = antiMuWpPlus_ = 0;
+
+  matchedMinus_ = 0;
+  matchedPlus_ = 0;
 
   pt2Sum_ = 0;
   ptThrust_ = 0;
