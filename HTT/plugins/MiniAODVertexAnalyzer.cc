@@ -790,7 +790,7 @@ bool MiniAODVertexAnalyzer::setPCAVectors(const edm::Event & iEvent, const edm::
 
   GlobalPoint aPoint(myEvent_->recoEvent_.refitPfPV_.X(),
 		     myEvent_->recoEvent_.refitPfPV_.Y(),
-		     myEvent_->recoEvent_.refitPfPV_.Z());
+		     myEvent_->recoEvent_.thePV_.Z());
 
   myEvent_->recoEvent_.nPiPlus_ = getPCA(iEvent,iSetup, thePair_.first, aPoint);
   myEvent_->recoEvent_.nPiMinus_ = getPCA(iEvent,iSetup, thePair_.second, aPoint);
@@ -803,7 +803,7 @@ bool MiniAODVertexAnalyzer::setPCAVectors(const edm::Event & iEvent, const edm::
   myEvent_->recoEvent_.nPiPlusAODvx_ = getPCA(iEvent,iSetup, thePair_.first, aPoint);
   myEvent_->recoEvent_.nPiMinusAODvx_ = getPCA(iEvent,iSetup, thePair_.second, aPoint);
   
-  ///PV refit excluding tau tracks
+  ///PV refit (excluding tau tracks?)
   aPoint = GlobalPoint(myEvent_->recoEvent_.refitPfPV_.X(),
 		       myEvent_->recoEvent_.refitPfPV_.Y(),
 		       myEvent_->recoEvent_.refitPfPV_.Z());
