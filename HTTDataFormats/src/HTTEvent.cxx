@@ -89,6 +89,11 @@ void DiTauData::clear(){
   nGammaMinus_ = nGammaPlus_ = 0;
   nGammaInConeMinus_ = nGammaInConePlus_ = 0;
 
+  gammaPtSumInScMinus_ = gammaPtSumInScPlus_ = 0;
+  gammaPtSumOutScMinus_ = gammaPtSumOutScPlus_ = 0;
+  dR2midMinus_ = dR2midPlus_ = 99;
+
+
   for(size_t i=0; i<pfScore_.size(); ++i) pfScore_[i]=0; 
   for(size_t i=0; i<pt2Score_.size(); ++i) pt2Score_[i]=0; 
   for(size_t i=0; i<dzVtx_.size(); ++i) dzVtx_[i]=0; 
@@ -100,6 +105,7 @@ void DiTauData::clear(){
   isoMVAWpPlus_ = 0;
 
   antiEWpMinus_  = antiEWpPlus_  = 0;
+  antiE2WpMinus_  = antiE2WpPlus_  = 0;
   antiMuWpMinus_ = antiMuWpPlus_ = 0;
 
   matchedMinus_ = 0;

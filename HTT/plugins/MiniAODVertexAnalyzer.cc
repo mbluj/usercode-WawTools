@@ -490,6 +490,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
   //Tau+
   myEvent_->recoEvent_.isoMVAWpPlus_ = 0;
   myEvent_->recoEvent_.antiEWpPlus_ = 0;
+  myEvent_->recoEvent_.antiE2WpPlus_ = 0;
   myEvent_->recoEvent_.antiMuWpPlus_ = 0;
   const pat::Tau* aTau = dynamic_cast<const pat::Tau*>(thePair_.first);
   if(aTau!=nullptr){
@@ -518,6 +519,16 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
       myEvent_->recoEvent_.antiEWpPlus_ = 4;
     if(aTau->tauID("againstElectronVTightMVA6") > 0.5)
       myEvent_->recoEvent_.antiEWpPlus_ = 5;
+    if(aTau->tauID("againstElectronVLooseMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpPlus_ = 1;
+    if(aTau->tauID("againstElectronLooseMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpPlus_ = 2;
+    if(aTau->tauID("againstElectronMediumMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpPlus_ = 3;
+    if(aTau->tauID("againstElectronTightMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpPlus_ = 4;
+    if(aTau->tauID("againstElectronVTightMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpPlus_ = 5;
     if(aTau->tauID("againstMuonLoose3") > 0.5)
       myEvent_->recoEvent_.antiMuWpPlus_ = 1;
     if(aTau->tauID("againstMuonTight3") > 0.5)
@@ -527,26 +538,58 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
     reco::Candidate::LorentzVector pi0P4;
     myEvent_->recoEvent_.nGammaPlus_ = 0;
     myEvent_->recoEvent_.nGammaInConePlus_ = 0;
+    myEvent_->recoEvent_.gammaPtSumInScPlus_ = 0;
+    myEvent_->recoEvent_.gammaPtSumOutScPlus_ = 0;
+    myEvent_->recoEvent_.dR2midPlus_ = (aTau->signalGammaCands().size()>0 ? 0 : 99);
+    float sumPt2 = (aTau->signalGammaCands().size()>0 ? 0 : 1);
     float signalConeR2 = std::clamp(3.0/aTau->pt(),0.05,0.1);
     signalConeR2 *= signalConeR2;
     for(size_t j=0; j<aTau->signalGammaCands().size(); ++j){
+      float gammaPt = aTau->signalGammaCands()[j]->pt();
+      if(!(gammaPt>0.5)) continue;
       myEvent_->recoEvent_.nGammaPlus_++;
+      sumPt2 += gammaPt*gammaPt;
+      float dR2 = deltaR2(aTau->p4(),aTau->signalGammaCands()[j]->p4());
+      myEvent_->recoEvent_.dR2midPlus_ += dR2*gammaPt*gammaPt;
       pi0P4 += aTau->signalGammaCands()[j]->p4();
-      if(deltaR2(aTau->p4(),aTau->signalGammaCands()[j]->p4()) < signalConeR2)
+      if(dR2 < signalConeR2){
 	myEvent_->recoEvent_.nGammaInConePlus_++;
+	myEvent_->recoEvent_.gammaPtSumInScPlus_ += gammaPt;
+      }
+      else {
+	myEvent_->recoEvent_.gammaPtSumOutScPlus_ += gammaPt;
+      }
     }
-    myEvent_->recoEvent_.pi0Plus_ = TLorentzVector(pi0P4.px(),
-						   pi0P4.py(),
-						   pi0P4.pz(),
-						   pi0P4.e());
+    myEvent_->recoEvent_.pi0Plus_.SetXYZT(pi0P4.px(),
+					  pi0P4.py(),
+					  pi0P4.pz(),
+					  pi0P4.e());
+    myEvent_->recoEvent_.dR2midPlus_ /= sumPt2;
     const pat::PackedCandidate *leadCharged = dynamic_cast<pat::PackedCandidate const*>(aTau->leadChargedHadrCand().get());
     if(leadCharged!=nullptr){
       myEvent_->recoEvent_.leadIdPlus_ = leadCharged->pdgId();
       myEvent_->recoEvent_.dzPlus_ = leadCharged->dz();
-      myEvent_->recoEvent_.piPlus_ = TLorentzVector(leadCharged->p4().px(),
-						    leadCharged->p4().py(),
-						    leadCharged->p4().pz(),
-						    leadCharged->p4().e());
+      myEvent_->recoEvent_.piPlus_.SetXYZT(leadCharged->p4().px(),
+					   leadCharged->p4().py(),
+					   leadCharged->p4().pz(),
+					   leadCharged->p4().e());
+    }
+    //recover mass of 1prong+0pi0 in case of strip in cone
+    if(aTau->decayMode()==WawGenInfoHelper::tauDecayModes::tauDecay1ChargedPion0PiZero
+       && leadCharged!=nullptr
+       && pi0P4.pt()>0.5 && deltaR2(aTau->p4(),pi0P4) < signalConeR2
+       ){
+      float mass = (leadCharged->p4()+pi0P4).mass();
+      myEvent_->recoEvent_.visTauPlus_.SetXYZM(aTau->p4().px(),
+					       aTau->p4().py(),
+					       aTau->p4().pz(),
+					       mass);
+    }
+    else{
+      myEvent_->recoEvent_.visTauPlus_.SetXYZT(aTau->p4().px(),
+					       aTau->p4().py(),
+					       aTau->p4().pz(),
+					       aTau->p4().e());
     }
   }
   else{
@@ -556,25 +599,25 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
       myEvent_->recoEvent_.decModePlus_ = WawGenInfoHelper::tauDecayModes::tauDecayMuon;
       myEvent_->recoEvent_.leadIdPlus_ = aMu->pdgId();
       myEvent_->recoEvent_.dzPlus_ = aMu->muonBestTrack()->dz((*vertices)[0].position());
-      myEvent_->recoEvent_.piPlus_ = TLorentzVector(aMu->p4().px(),
-						    aMu->p4().py(),
-						    aMu->p4().pz(),
-						    aMu->p4().e());
+      myEvent_->recoEvent_.piPlus_.SetXYZT(aMu->p4().px(),
+					   aMu->p4().py(),
+					   aMu->p4().pz(),
+					   aMu->p4().e());
     }
+    myEvent_->recoEvent_.visTauPlus_.SetXYZT(thePair_.first->p4().px(),
+					     thePair_.first->p4().py(),
+					     thePair_.first->p4().pz(),
+					     thePair_.first->p4().e());
   }
-  myEvent_->recoEvent_.visTauPlus_ = TLorentzVector(thePair_.first->p4().Px(),
-						    thePair_.first->p4().Py(),
-						    thePair_.first->p4().Pz(),
-						    thePair_.first->p4().E());
   myEvent_->recoEvent_.tauPlus_ = myEvent_->recoEvent_.visTauPlus_;
   //gen matching
   // correct matching
   if(deltaR2(myEvent_->recoEvent_.visTauPlus_.Eta(),myEvent_->recoEvent_.visTauPlus_.Phi(),
 	     myEvent_->genEvent_.visTauPlus_.Eta(),myEvent_->genEvent_.visTauPlus_.Phi()) < 0.2*0.2){
     if(myEvent_->genEvent_.decModePlus_==WawGenInfoHelper::tauDecayModes::tauDecayMuon)
-      myEvent_->recoEvent_.matchedPlus_ = 3;
-    else if(myEvent_->genEvent_.decModePlus_==WawGenInfoHelper::tauDecayModes::tauDecaysElectron)
       myEvent_->recoEvent_.matchedPlus_ = 4;
+    else if(myEvent_->genEvent_.decModePlus_==WawGenInfoHelper::tauDecayModes::tauDecaysElectron)
+      myEvent_->recoEvent_.matchedPlus_ = 3;
     else if(myEvent_->genEvent_.decModePlus_!=WawGenInfoHelper::tauDecayModes::tauDecayOther || myEvent_->genEvent_.visTauPlus_.Pt()>0)
       myEvent_->recoEvent_.matchedPlus_ = 5;
   }
@@ -582,9 +625,9 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
   else if(deltaR2(myEvent_->recoEvent_.visTauPlus_.Eta(),myEvent_->recoEvent_.visTauPlus_.Phi(),
 		  myEvent_->genEvent_.visTauMinus_.Eta(),myEvent_->genEvent_.visTauMinus_.Phi()) < 0.2*0.2){
     if(myEvent_->genEvent_.decModeMinus_==WawGenInfoHelper::tauDecayModes::tauDecayMuon)
-      myEvent_->recoEvent_.matchedPlus_ = -3;
-    else if(myEvent_->genEvent_.decModeMinus_==WawGenInfoHelper::tauDecayModes::tauDecaysElectron)
       myEvent_->recoEvent_.matchedPlus_ = -4;
+    else if(myEvent_->genEvent_.decModeMinus_==WawGenInfoHelper::tauDecayModes::tauDecaysElectron)
+      myEvent_->recoEvent_.matchedPlus_ = -3;
     else if(myEvent_->genEvent_.decModeMinus_!=WawGenInfoHelper::tauDecayModes::tauDecayOther || myEvent_->genEvent_.visTauMinus_.Pt()>0)
       myEvent_->recoEvent_.matchedPlus_ = -5;
   }
@@ -593,6 +636,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
   //Tau-
   myEvent_->recoEvent_.isoMVAWpMinus_ = 0;
   myEvent_->recoEvent_.antiEWpMinus_ = 0;
+  myEvent_->recoEvent_.antiE2WpMinus_ = 0;
   myEvent_->recoEvent_.antiMuWpMinus_ = 0;
   aTau = dynamic_cast<const pat::Tau*>(thePair_.second);
   if(aTau!=nullptr){
@@ -621,6 +665,16 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
       myEvent_->recoEvent_.antiEWpMinus_ = 4;
     if(aTau->tauID("againstElectronVTightMVA6") > 0.5)
       myEvent_->recoEvent_.antiEWpMinus_ = 5;
+    if(aTau->tauID("againstElectronVLooseMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpMinus_ = 1;
+    if(aTau->tauID("againstElectronLooseMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpMinus_ = 2;
+    if(aTau->tauID("againstElectronMediumMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpMinus_ = 3;
+    if(aTau->tauID("againstElectronTightMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpMinus_ = 4;
+    if(aTau->tauID("againstElectronVTightMVA62018") > 0.5)
+      myEvent_->recoEvent_.antiE2WpMinus_ = 5;
     if(aTau->tauID("againstMuonLoose3") > 0.5)
       myEvent_->recoEvent_.antiMuWpMinus_ = 1;
     if(aTau->tauID("againstMuonTight3") > 0.5)
@@ -630,26 +684,58 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
     reco::Candidate::LorentzVector pi0P4;
     myEvent_->recoEvent_.nGammaMinus_ = 0;
     myEvent_->recoEvent_.nGammaInConeMinus_ = 0;
+    myEvent_->recoEvent_.gammaPtSumInScMinus_ = 0;
+    myEvent_->recoEvent_.gammaPtSumOutScMinus_ = 0;
+    myEvent_->recoEvent_.dR2midMinus_ = (aTau->signalGammaCands().size()>0 ? 0 : 99);
+    float sumPt2 = (aTau->signalGammaCands().size()>0 ? 0 : 1);
     float signalConeR2 = std::clamp(3.0/aTau->pt(),0.05,0.1);
     signalConeR2 *= signalConeR2;
     for(size_t j=0; j<aTau->signalGammaCands().size(); ++j){
+      float gammaPt = aTau->signalGammaCands()[j]->pt();
+      if(!(gammaPt>0.5)) continue;
       myEvent_->recoEvent_.nGammaMinus_++;
+      sumPt2 += gammaPt*gammaPt;
+      float dR2 = deltaR2(aTau->p4(),aTau->signalGammaCands()[j]->p4());
+      myEvent_->recoEvent_.dR2midMinus_ += dR2*gammaPt*gammaPt;
       pi0P4 += aTau->signalGammaCands()[j]->p4();
-      if(deltaR2(aTau->p4(),aTau->signalGammaCands()[j]->p4()) < signalConeR2)
+      if(dR2 < signalConeR2){
 	myEvent_->recoEvent_.nGammaInConeMinus_++;
+	myEvent_->recoEvent_.gammaPtSumInScMinus_ += gammaPt;
+      }
+      else {
+	myEvent_->recoEvent_.gammaPtSumOutScMinus_ += gammaPt;
+      }
     }
-    myEvent_->recoEvent_.pi0Minus_ = TLorentzVector(pi0P4.px(),
-						    pi0P4.py(),
-						    pi0P4.pz(),
-						    pi0P4.e());
+    myEvent_->recoEvent_.pi0Minus_.SetXYZT(pi0P4.px(),
+					   pi0P4.py(),
+					   pi0P4.pz(),
+					   pi0P4.e());
+    myEvent_->recoEvent_.dR2midMinus_ /= sumPt2;
     const pat::PackedCandidate *leadCharged = dynamic_cast<pat::PackedCandidate const*>(aTau->leadChargedHadrCand().get());
     if(leadCharged!=nullptr){
       myEvent_->recoEvent_.leadIdMinus_ = leadCharged->pdgId();
       myEvent_->recoEvent_.dzMinus_ = leadCharged->dz();
-      myEvent_->recoEvent_.piMinus_ = TLorentzVector(leadCharged->p4().px(),
-						     leadCharged->p4().py(),
-						     leadCharged->p4().pz(),
-						     leadCharged->p4().e());
+      myEvent_->recoEvent_.piMinus_.SetXYZT(leadCharged->p4().px(),
+					    leadCharged->p4().py(),
+					    leadCharged->p4().pz(),
+					    leadCharged->p4().e());
+    }
+    //recover mass of 1prong+0pi0 in case of strip in cone
+    if(aTau->decayMode()==WawGenInfoHelper::tauDecayModes::tauDecay1ChargedPion0PiZero
+       && leadCharged!=nullptr
+       && pi0P4.pt()>0.5 && deltaR2(aTau->p4(),pi0P4) < signalConeR2
+       ){
+      float mass = (leadCharged->p4()+pi0P4).mass();
+      myEvent_->recoEvent_.visTauMinus_.SetXYZM(aTau->p4().px(),
+						aTau->p4().py(),
+						aTau->p4().pz(),
+						mass);
+    }
+    else{
+      myEvent_->recoEvent_.visTauMinus_.SetXYZT(aTau->p4().px(),
+						aTau->p4().py(),
+						aTau->p4().pz(),
+						aTau->p4().e());
     }
   }
   else{
@@ -659,25 +745,25 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
       myEvent_->recoEvent_.decModeMinus_ = WawGenInfoHelper::tauDecayModes::tauDecayMuon;
       myEvent_->recoEvent_.leadIdMinus_ = aMu->pdgId();
       myEvent_->recoEvent_.dzMinus_ = aMu->muonBestTrack()->dz((*vertices)[0].position());
-      myEvent_->recoEvent_.piMinus_ = TLorentzVector(aMu->p4().px(),
-						     aMu->p4().py(),
-						     aMu->p4().pz(),
-						     aMu->p4().e());
+      myEvent_->recoEvent_.piMinus_.SetXYZT(aMu->p4().px(),
+					    aMu->p4().py(),
+					    aMu->p4().pz(),
+					    aMu->p4().e());
     }
+    myEvent_->recoEvent_.visTauMinus_.SetXYZT(thePair_.second->p4().px(),
+					      thePair_.second->p4().py(),
+					      thePair_.second->p4().pz(),
+					      thePair_.second->p4().e());
   }
-  myEvent_->recoEvent_.visTauMinus_ = TLorentzVector(thePair_.second->p4().Px(),
-						     thePair_.second->p4().Py(),
-						     thePair_.second->p4().Pz(),
-						     thePair_.second->p4().E());
   myEvent_->recoEvent_.tauMinus_ = myEvent_->recoEvent_.visTauMinus_;
   //gen matching
   // correct matching
   if(deltaR2(myEvent_->recoEvent_.visTauMinus_.Eta(),myEvent_->recoEvent_.visTauMinus_.Phi(),
 	     myEvent_->genEvent_.visTauMinus_.Eta(),myEvent_->genEvent_.visTauMinus_.Phi()) < 0.2*0.2){
     if(myEvent_->genEvent_.decModeMinus_==WawGenInfoHelper::tauDecayModes::tauDecayMuon)
-      myEvent_->recoEvent_.matchedMinus_ = 3;
-    else if(myEvent_->genEvent_.decModeMinus_==WawGenInfoHelper::tauDecayModes::tauDecaysElectron)
       myEvent_->recoEvent_.matchedMinus_ = 4;
+    else if(myEvent_->genEvent_.decModeMinus_==WawGenInfoHelper::tauDecayModes::tauDecaysElectron)
+      myEvent_->recoEvent_.matchedMinus_ = 3;
     else if(myEvent_->genEvent_.decModeMinus_!=WawGenInfoHelper::tauDecayModes::tauDecayOther || myEvent_->genEvent_.visTauMinus_.Pt()>0)
       myEvent_->recoEvent_.matchedMinus_ = 5;
   }
@@ -685,9 +771,9 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
   else if(deltaR2(myEvent_->recoEvent_.visTauMinus_.Eta(),myEvent_->recoEvent_.visTauMinus_.Phi(),
 		  myEvent_->genEvent_.visTauPlus_.Eta(),myEvent_->genEvent_.visTauPlus_.Phi()) < 0.2*0.2){
     if(myEvent_->genEvent_.decModePlus_==WawGenInfoHelper::tauDecayModes::tauDecayMuon)
-      myEvent_->recoEvent_.matchedMinus_ = -3;
-    else if(myEvent_->genEvent_.decModePlus_==WawGenInfoHelper::tauDecayModes::tauDecaysElectron)
       myEvent_->recoEvent_.matchedMinus_ = -4;
+    else if(myEvent_->genEvent_.decModePlus_==WawGenInfoHelper::tauDecayModes::tauDecaysElectron)
+      myEvent_->recoEvent_.matchedMinus_ = -3;
     else if(myEvent_->genEvent_.decModePlus_!=WawGenInfoHelper::tauDecayModes::tauDecayOther || myEvent_->genEvent_.visTauPlus_.Pt()>0)
       myEvent_->recoEvent_.matchedMinus_ = -5;
   }

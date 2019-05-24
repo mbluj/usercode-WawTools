@@ -46,8 +46,12 @@ class DiTauData{
   float isoMinus_, isoPlus_;
   int isoMVAWpMinus_, isoMVAWpPlus_;
   int antiEWpMinus_, antiEWpPlus_;
+  int antiE2WpMinus_, antiE2WpPlus_;
   int antiMuWpMinus_, antiMuWpPlus_;
   int matchedMinus_, matchedPlus_;
+  float gammaPtSumInScMinus_, gammaPtSumInScPlus_;
+  float gammaPtSumOutScMinus_, gammaPtSumOutScPlus_;
+  float dR2midMinus_, dR2midPlus_;
 
   float pt2Sum_, ptThrust_, ptBalance_;
 
