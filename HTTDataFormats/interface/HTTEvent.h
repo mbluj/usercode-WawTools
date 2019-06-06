@@ -78,7 +78,7 @@ class HTTEvent {
   int bosonId_;
 
   int nPV_;
-  bool diMuonVeto_;
+  bool diMuonVeto_, diEleVeto_;
 
   DiTauData genEvent_, recoEvent_;
     

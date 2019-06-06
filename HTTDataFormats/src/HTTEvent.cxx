@@ -26,6 +26,7 @@ void HTTEvent::clear(){
 
   nPV_ = 0;
   diMuonVeto_ = false;
+  diEleVeto_ = false;
 
   genEvent_.clear();
   recoEvent_.clear();

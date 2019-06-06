@@ -23,6 +23,7 @@
 
 #include "DataFormats/PatCandidates/interface/Tau.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/PatCandidates/interface/Electron.h"
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
 
@@ -71,7 +72,11 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     bool findRecoTaus(const edm::Event & iEvent, const edm::EventSetup & iSetup);
 
     ///Find best mu-tau pair
-    std::pair<const reco::Candidate*, const reco::Candidate*> findMTPair(const edm::Handle<std::vector<pat::Muon> > &muColl, 
+    std::pair<const reco::Candidate*, const reco::Candidate*> findMTPair(const edm::Handle<std::vector<pat::Muon> > &muColl,
+									 const edm::Handle<std::vector<pat::Tau> > &tauColl,
+									 const edm::Handle<reco::VertexCollection> &vtxColl);
+    ///Find best e-tau pair
+    std::pair<const reco::Candidate*, const reco::Candidate*> findETPair(const edm::Handle<std::vector<pat::Electron> > &eColl,
 									 const edm::Handle<std::vector<pat::Tau> > &tauColl,
 									 const edm::Handle<reco::VertexCollection> &vtxColl);
     ///Find best tau-tau pair
@@ -79,24 +84,30 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
 
     bool diMuVeto(const edm::Handle<std::vector<pat::Muon> > &muColl,
 		  const edm::Handle<reco::VertexCollection> &vtxColl);
+    bool diEVeto(const edm::Handle<std::vector<pat::Electron> > &eColl,
+		 const edm::Handle<reco::VertexCollection> &vtxColl);
 
     ///Set PCA vector for reco taus. This must be run AFTER
     ///vertex refitting.
     bool setPCAVectors(const edm::Event & iEvent, const edm::EventSetup & iSetup);
 
+    ///Get leading track of tau or track of e/mu
+    const reco::Track* getLeadTrack(const edm::Event & iEvent,
+				    const reco::Candidate *aTau);
+
     ///Calculate PCA for given tau candidate, wrt. given vertex.
     TVector3 getPCA(const edm::Event & iEvent, const edm::EventSetup & iSetup,
-		    const reco::Candidate* aTau,
+		    const reco::Track* aTrack,
 		    const GlobalPoint & aPoint);
 
-    bool getPVBalance(const edm::Event & iEvent, const edm::EventSetup & iSetup, 
-		      size_t iPV=0);
+    bool getPVBalance(const edm::Event & iEvent, size_t iPV=0);
     
     virtual void beginJob() override;
     virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
     virtual void endJob() override;
 
     float muRelIso(const pat::Muon *aMu);
+    float eRelIso(const pat::Electron *aEle);
 
     edm::EDGetTokenT<edm::ValueMap<float>> scores_;
     edm::EDGetTokenT<edm::View<pat::PackedCandidate> >  cands_, lostCands_, lostCandsEle_;
@@ -105,6 +116,7 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     edm::EDGetTokenT<reco::BeamSpot> bs_;
     edm::EDGetTokenT<std::vector<pat::Tau> > taus_;
     edm::EDGetTokenT<std::vector<pat::Muon> > mus_;
+    edm::EDGetTokenT<std::vector<pat::Electron> > eles_;
 
     bool useBeamSpot_, useLostCands_, useTauTracks_;
     bool verbose_;

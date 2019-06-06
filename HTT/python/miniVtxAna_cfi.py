@@ -12,6 +12,7 @@ miniVtxAna = cms.EDAnalyzer(
     beamSpot = cms.InputTag("offlineBeamSpot"),
     taus = cms.InputTag("slimmedTaus"),
     muons = cms.InputTag("slimmedMuons"),
+    electrons = cms.InputTag("slimmedElectrons"),
     useBeamSpot = cms.bool(True),
     useLostCands = cms.bool(True),
     useTauTracks = cms.untracked.bool(True),
