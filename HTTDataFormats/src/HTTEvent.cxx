@@ -60,12 +60,16 @@ void DiTauData::clear(){
   thePV_ = TVector3();
   svMinus_ = TVector3();
   svPlus_ = TVector3();
-  nPiPlus_ = TVector3();
   nPiMinus_ = TVector3();
+  nPiPlus_ = TVector3();
 
   p4Sum_ = TLorentzVector();
   piMinus_ = TLorentzVector();
   piPlus_ = TLorentzVector();
+  trkMinus_ = TLorentzVector();
+  trkPlus_ = TLorentzVector();
+  scMinus_ = TLorentzVector();
+  scPlus_ = TLorentzVector();
   tauMinus_ = TLorentzVector();
   tauPlus_ = TLorentzVector();
   pi0Minus_ = TLorentzVector();

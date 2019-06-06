@@ -608,6 +608,49 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 					   leadCharged->p4().py(),
 					   leadCharged->p4().pz(),
 					   leadCharged->p4().e());
+      if(std::abs(leadCharged->pdgId())==11){
+	edm::Handle<std::vector<pat::Electron> > eles;
+	iEvent.getByToken(eles_, eles);
+	bool matchedEle = false;
+	/*
+	std::cout<<"lead electron"
+		 <<", pt="<<leadCharged->pt()
+		 <<", eta="<<leadCharged->eta()
+		 <<", phi="<<leadCharged->phi()
+		 <<std::endl;
+	*/
+	for(size_t ie=0; ie<eles->size(); ++ie){
+	  if(matchedEle) break;
+	  for(size_t ipf=0; ipf<(*eles)[ie].associatedPackedPFCandidates().size(); ++ipf){
+	    if((*eles)[ie].associatedPackedPFCandidates()[ipf].key()==aTau->leadChargedHadrCand().key()){
+	      matchedEle = true;
+	      break;
+	    }
+	  }
+	  if(!matchedEle) continue;
+	  /*
+	  std::cout<<"\t found gsfEle"
+		   <<", pt="<<(*eles)[ie].pt()
+		   <<", eta="<<(*eles)[ie].eta()
+		   <<", phi="<<(*eles)[ie].phi()
+		   <<std::endl;
+	  */
+	  double scE = (*eles)[ie].superCluster()->energy();
+	  double scP = (*eles)[ie].superCluster()->position().r();
+	  math::XYZPoint scMom = ((*eles)[ie].superCluster()->position())*scE/std::max(scP,1e-5);
+	  myEvent_->recoEvent_.scPlus_.SetXYZT(scMom.x(),
+					       scMom.y(),
+					       scMom.z(),
+					       scE);
+	  /*
+	  std::cout<<"\t SC"
+		   <<", Et="<<myEvent_->recoEvent_.scPlus_.Et()
+		   <<", eta="<<myEvent_->recoEvent_.scPlus_.Eta()
+		   <<", phi="<<myEvent_->recoEvent_.scPlus_.Phi()
+		   <<std::endl;
+	  */
+	}
+      }
     }
     //recover mass of 1prong+0pi0 in case of strip in cone
     if(aTau->decayMode()==WawGenInfoHelper::tauDecayModes::tauDecay1ChargedPion0PiZero
@@ -650,6 +693,13 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 					     aEle->p4().py(),
 					     aEle->p4().pz(),
 					     aEle->p4().e());
+	double scE = aEle->superCluster()->energy();
+	double scP = aEle->superCluster()->position().r();
+	math::XYZPoint scMom = (aEle->superCluster()->position())*scE/std::max(scP,1e-5);
+	myEvent_->recoEvent_.scPlus_.SetXYZT(scMom.x(),
+					     scMom.y(),
+					     scMom.z(),
+					     scE);
       }
     }
     myEvent_->recoEvent_.visTauPlus_.SetXYZT(thePair_.first->p4().px(),
@@ -767,6 +817,49 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 					    leadCharged->p4().py(),
 					    leadCharged->p4().pz(),
 					    leadCharged->p4().e());
+      if(std::abs(leadCharged->pdgId())==11){
+	edm::Handle<std::vector<pat::Electron> > eles;
+	iEvent.getByToken(eles_, eles);
+	bool matchedEle = false;
+	/*
+	std::cout<<"lead electron"
+		 <<", pt="<<leadCharged->pt()
+		 <<", eta="<<leadCharged->eta()
+		 <<", phi="<<leadCharged->phi()
+		 <<std::endl;
+	*/
+	for(size_t ie=0; ie<eles->size(); ++ie){
+	  if(matchedEle) break;
+	  for(size_t ipf=0; ipf<(*eles)[ie].associatedPackedPFCandidates().size(); ++ipf){
+	    if((*eles)[ie].associatedPackedPFCandidates()[ipf].key()==aTau->leadChargedHadrCand().key()){
+	      matchedEle = true;
+	      break;
+	    }
+	  }
+	  if(!matchedEle) continue;
+	  /*
+	  std::cout<<"\t found gsfEle"
+		   <<", pt="<<(*eles)[ie].pt()
+		   <<", eta="<<(*eles)[ie].eta()
+		   <<", phi="<<(*eles)[ie].phi()
+		   <<std::endl;
+	  */
+	  double scE = (*eles)[ie].superCluster()->energy();
+	  double scP = (*eles)[ie].superCluster()->position().r();
+	  math::XYZPoint scMom = ((*eles)[ie].superCluster()->position())*scE/std::max(scP,1e-5);
+	  myEvent_->recoEvent_.scMinus_.SetXYZT(scMom.x(),
+						scMom.y(),
+						scMom.z(),
+						scE);
+	  /*
+	  std::cout<<"\t SC"
+		   <<", Et="<<myEvent_->recoEvent_.scMinus_.Et()
+		   <<", eta="<<myEvent_->recoEvent_.scMinus_.Eta()
+		   <<", phi="<<myEvent_->recoEvent_.scMinus_.Phi()
+		   <<std::endl;
+	  */
+	}
+      }
     }
     //recover mass of 1prong+0pi0 in case of strip in cone
     if(aTau->decayMode()==WawGenInfoHelper::tauDecayModes::tauDecay1ChargedPion0PiZero
@@ -809,6 +902,13 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 					      aEle->p4().py(),
 					      aEle->p4().pz(),
 					      aEle->p4().e());
+	double scE = aEle->superCluster()->energy();
+	double scP = aEle->superCluster()->position().r();
+	math::XYZPoint scMom = (aEle->superCluster()->position())*scE/std::max(scP,1e-5);
+	myEvent_->recoEvent_.scMinus_.SetXYZT(scMom.x(),
+					      scMom.y(),
+					      scMom.z(),
+					      scE);
       }
     }
     myEvent_->recoEvent_.visTauMinus_.SetXYZT(thePair_.second->p4().px(),
@@ -850,7 +950,19 @@ bool MiniAODVertexAnalyzer::setPCAVectors(const edm::Event & iEvent, const edm::
   if(thePair_.first==nullptr || thePair_.second==nullptr) return false;
 
   const reco::Track *leadTrackPlus = getLeadTrack(iEvent, thePair_.first);
+  if(leadTrackPlus!=nullptr){
+    myEvent_->recoEvent_.trkPlus_.SetXYZT(leadTrackPlus->px(),
+					  leadTrackPlus->py(),
+					  leadTrackPlus->pz(),
+					  leadTrackPlus->p());
+  }
   const reco::Track *leadTrackMinus = getLeadTrack(iEvent, thePair_.second);
+  if(leadTrackMinus!=nullptr){
+    myEvent_->recoEvent_.trkMinus_.SetXYZT(leadTrackMinus->px(),
+					   leadTrackMinus->py(),
+					   leadTrackMinus->pz(),
+					   leadTrackMinus->p());
+  }
 
   GlobalPoint aPoint(myEvent_->recoEvent_.refitPfPV_.X(),
 		     myEvent_->recoEvent_.refitPfPV_.Y(),
@@ -901,7 +1013,17 @@ const reco::Track* MiniAODVertexAnalyzer::getLeadTrack(const edm::Event & iEvent
 	edm::Handle<reco::VertexCollection> vertices;
 	iEvent.getByToken(vertices_, vertices);
 	const reco::Track *aKFTrack = nullptr;
-	std::cout<<"leadEle"<<std::endl;
+	/*
+	std::cout<<"leadEle"
+		   <<", pt="<<leadCharged->pt()
+		   <<", eta="<<leadCharged->eta()
+		   <<", phi="<<leadCharged->phi()
+		   <<std::endl
+		   <<"\tGSF track, pt="<<aTrack->pt()
+		   <<", eta="<<aTrack->eta()
+		   <<", phi="<<aTrack->phi()
+		   <<std::endl;
+	*/
 	for(size_t i=0; i<eleTracks->size(); ++i){
 	  if(std::abs((*eleTracks)[i].pdgId())!=11 ||//protection againist possible "photon" tracks
 	     !(*eleTracks)[i].hasTrackDetails() ||
@@ -914,19 +1036,19 @@ const reco::Track* MiniAODVertexAnalyzer::getLeadTrack(const edm::Event & iEvent
 	  if(dR2<maxDr2 && dEta<maxDeta){
 	    aKFTrack = (*eleTracks)[i].bestTrack();
 	    maxDeta = dEta;
+	    /*
 	    std::cout<<"\t\tKF track, dR="<<sqrt(dR2)
-		     <<", dEta="<<dEta<<std::endl;
+	             <<", dEta="<<dEta<<std::endl;
+	    */
 	  }
 	}
 	if(aKFTrack!=nullptr){
+	  /*
 	  std::cout<<"\tKF track, pt="<<aKFTrack->pt()
 		   <<", eta="<<aKFTrack->eta()
 		   <<", phi="<<aKFTrack->phi()
-		   <<std::endl
-		   <<"\tGSF track, pt="<<aTrack->pt()
-		   <<", eta="<<aTrack->eta()
-		   <<", phi="<<aTrack->phi()
 		   <<std::endl;
+	  */
 	  aTrack = aKFTrack;
 	}
       }
