@@ -30,7 +30,8 @@ process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 process.maxEvents = cms.untracked.PSet( 
     input = cms.untracked.int32(-1) 
 )
-
+if runType=="test":
+	process.maxEvents.input = 10000
 
 DYfileNames = cms.untracked.vstring( #~250k
     '/store/mc/RunIIFall17MiniAODv2/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/PU2017RECOSIMstep_12Apr2018_94X_mc2017_realistic_v14-v1/20000/00D13F2E-6F44-E811-923E-001E0BED0560.root',
