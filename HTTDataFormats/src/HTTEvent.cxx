@@ -93,9 +93,11 @@ void DiTauData::clear(){
 
   nGammaMinus_ = nGammaPlus_ = 0;
   nGammaInConeMinus_ = nGammaInConePlus_ = 0;
+  nStripMinus_ = nStripPlus_ = 0;
 
   gammaPtSumInScMinus_ = gammaPtSumInScPlus_ = 0;
   gammaPtSumOutScMinus_ = gammaPtSumOutScPlus_ = 0;
+  maxGammaPtMinus_ = maxGammaPtPlus_ = 0;
   dR2midMinus_ = dR2midPlus_ = 99;
 
 

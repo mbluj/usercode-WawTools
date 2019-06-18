@@ -41,6 +41,7 @@ class DiTauData{
   int leadIdMinus_, leadIdPlus_;
   int nGammaMinus_, nGammaPlus_;
   int nGammaInConeMinus_, nGammaInConePlus_;
+  int nStripMinus_, nStripPlus_;
 
   std::vector<float> pfScore_, pt2Score_;
   std::vector<float> dzVtx_;
@@ -53,6 +54,7 @@ class DiTauData{
   int matchedMinus_, matchedPlus_;
   float gammaPtSumInScMinus_, gammaPtSumInScPlus_;
   float gammaPtSumOutScMinus_, gammaPtSumOutScPlus_;
+  float maxGammaPtMinus_, maxGammaPtPlus_;
   float dR2midMinus_, dR2midPlus_;
 
   float pt2Sum_, ptThrust_, ptBalance_;
