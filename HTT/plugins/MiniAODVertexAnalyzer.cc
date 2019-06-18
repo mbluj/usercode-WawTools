@@ -575,18 +575,22 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
     myEvent_->recoEvent_.nGammaInConePlus_ = 0;
     myEvent_->recoEvent_.gammaPtSumInScPlus_ = 0;
     myEvent_->recoEvent_.gammaPtSumOutScPlus_ = 0;
-    myEvent_->recoEvent_.dR2midPlus_ = (aTau->signalGammaCands().size()>0 ? 0 : 99);
-    float sumPt2 = (aTau->signalGammaCands().size()>0 ? 0 : 1);
+    std::vector<reco::Candidate::LorentzVector> gammasInStripP4s;
+    unsigned int nStrips = recoverStrips(aTau,gammasInStripP4s);
+    myEvent_->recoEvent_.nStripPlus_ = nStrips;
+    myEvent_->recoEvent_.dR2midPlus_ = (nStrips>0 ? 0 : 99);
+    float sumPt2 = (nStrips>0 ? 0 : 1);
     float signalConeR2 = std::clamp(3.0/aTau->pt(),0.05,0.1);
     signalConeR2 *= signalConeR2;
-    for(size_t j=0; j<aTau->signalGammaCands().size(); ++j){
-      float gammaPt = aTau->signalGammaCands()[j]->pt();
-      if(!(gammaPt>0.5)) continue;
+    float maxPt = 0;
+    for(size_t j=0; j<gammasInStripP4s.size(); ++j){
+      float gammaPt = gammasInStripP4s[j].pt();
+      if(gammaPt>maxPt) maxPt = gammaPt;
       myEvent_->recoEvent_.nGammaPlus_++;
       sumPt2 += gammaPt*gammaPt;
-      float dR2 = deltaR2(aTau->p4(),aTau->signalGammaCands()[j]->p4());
+      float dR2 = deltaR2(aTau->p4(),gammasInStripP4s[j]);
       myEvent_->recoEvent_.dR2midPlus_ += dR2*gammaPt*gammaPt;
-      pi0P4 += aTau->signalGammaCands()[j]->p4();
+      pi0P4 += gammasInStripP4s[j];
       if(dR2 < signalConeR2){
 	myEvent_->recoEvent_.nGammaInConePlus_++;
 	myEvent_->recoEvent_.gammaPtSumInScPlus_ += gammaPt;
@@ -595,6 +599,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 	myEvent_->recoEvent_.gammaPtSumOutScPlus_ += gammaPt;
       }
     }
+    myEvent_->recoEvent_.maxGammaPtPlus_ = maxPt;
     myEvent_->recoEvent_.pi0Plus_.SetXYZT(pi0P4.px(),
 					  pi0P4.py(),
 					  pi0P4.pz(),
@@ -784,18 +789,22 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
     myEvent_->recoEvent_.nGammaInConeMinus_ = 0;
     myEvent_->recoEvent_.gammaPtSumInScMinus_ = 0;
     myEvent_->recoEvent_.gammaPtSumOutScMinus_ = 0;
-    myEvent_->recoEvent_.dR2midMinus_ = (aTau->signalGammaCands().size()>0 ? 0 : 99);
-    float sumPt2 = (aTau->signalGammaCands().size()>0 ? 0 : 1);
+    std::vector<reco::Candidate::LorentzVector> gammasInStripP4s;
+    unsigned int nStrips = recoverStrips(aTau,gammasInStripP4s);
+    myEvent_->recoEvent_.nStripMinus_ = nStrips;
+    myEvent_->recoEvent_.dR2midMinus_ = (nStrips>0 ? 0 : 99);
+    float sumPt2 = (nStrips>0 ? 0 : 1);
     float signalConeR2 = std::clamp(3.0/aTau->pt(),0.05,0.1);
     signalConeR2 *= signalConeR2;
-    for(size_t j=0; j<aTau->signalGammaCands().size(); ++j){
-      float gammaPt = aTau->signalGammaCands()[j]->pt();
-      if(!(gammaPt>0.5)) continue;
+    float maxPt = 0;
+    for(size_t j=0; j<gammasInStripP4s.size(); ++j){
+      float gammaPt = gammasInStripP4s[j].pt();
+      if(gammaPt>maxPt) maxPt = gammaPt;
       myEvent_->recoEvent_.nGammaMinus_++;
       sumPt2 += gammaPt*gammaPt;
-      float dR2 = deltaR2(aTau->p4(),aTau->signalGammaCands()[j]->p4());
+      float dR2 = deltaR2(aTau->p4(),gammasInStripP4s[j]);
       myEvent_->recoEvent_.dR2midMinus_ += dR2*gammaPt*gammaPt;
-      pi0P4 += aTau->signalGammaCands()[j]->p4();
+      pi0P4 += gammasInStripP4s[j];
       if(dR2 < signalConeR2){
 	myEvent_->recoEvent_.nGammaInConeMinus_++;
 	myEvent_->recoEvent_.gammaPtSumInScMinus_ += gammaPt;
@@ -804,6 +813,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 	myEvent_->recoEvent_.gammaPtSumOutScMinus_ += gammaPt;
       }
     }
+    myEvent_->recoEvent_.maxGammaPtMinus_ = maxPt;
     myEvent_->recoEvent_.pi0Minus_.SetXYZT(pi0P4.px(),
 					   pi0P4.py(),
 					   pi0P4.pz(),
@@ -1543,6 +1553,116 @@ bool  MiniAODVertexAnalyzer::getPVBalance(const edm::Event & iEvent, size_t iPV)
   myEvent_->recoEvent_.ptBalance_= (ptSum - diTauPt.Pt())/(ptSum + diTauPt.Pt());
   
   return true;
+}
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+size_t MiniAODVertexAnalyzer::recoverStrips(const pat::Tau *aTau,
+					    std::vector<reco::Candidate::LorentzVector> &pi0_dau_P4){
+  pi0_dau_P4.clear();
+  if(aTau->signalGammaCands().empty()) return 0;
+
+  //select gammas
+  std::vector<reco::Candidate::LorentzVector> signalGammas;
+  for(size_t j=0; j<aTau->signalGammaCands().size(); ++j){
+    if(!(aTau->signalGammaCands()[j]->pt()>0.5)) continue;
+    if(aTau->signalGammaCands()[j]->pdgId()!=22 &&
+       std::abs(aTau->signalGammaCands()[j]->pdgId())!=11) continue;
+    signalGammas.push_back(aTau->signalGammaCands()[j]->p4());
+  }
+  if(signalGammas.empty()) return 0;
+  //sort selected
+  std::sort(signalGammas.begin(), signalGammas.end(),
+	    [](reco::Candidate::LorentzVector a, reco::Candidate::LorentzVector b){
+	      return a.pt() > b.pt();
+	    });
+  std::set<size_t> usedGammaIds;
+  std::vector< std::set<size_t> > stripGammaIds;
+
+  while(usedGammaIds.size()<signalGammas.size()){
+    std::set<size_t> gammaIds = buildStrip(signalGammas, usedGammaIds);
+    if(!gammaIds.empty()){
+      stripGammaIds.push_back(gammaIds);
+    }
+    else{
+      std::cout<<"Empty strip??"
+	       <<", #usedGammas="<<usedGammaIds.size()
+	       <<", #signalGammas="<<signalGammas.size()
+	       <<std::endl;
+      break;
+    }
+  }
+  for(const auto &id: stripGammaIds[0]){
+    pi0_dau_P4.push_back(signalGammas[id]);
+  }
+  if(stripGammaIds.size()>1){//select the best strip
+    reco::Candidate::LorentzVector pi0P4;
+    for(const auto &p4: pi0_dau_P4){
+      pi0P4 += p4;
+    }
+    std::vector<reco::Candidate::LorentzVector> pi0_dau_P4_tmp;
+    float signalConeR2 = std::clamp(3.0/aTau->pt(),0.05,0.1);
+    signalConeR2 *= signalConeR2;
+    for(size_t i=1; i<stripGammaIds.size(); ++i){
+      //build alternative strip
+      pi0_dau_P4_tmp.clear();
+      reco::Candidate::LorentzVector pi0P4_tmp;
+      for(const auto &id: stripGammaIds[i]){
+	pi0_dau_P4_tmp.push_back(signalGammas[id]);
+	pi0P4_tmp += signalGammas[id];
+      }
+      //compare with alredy selected one
+      if(deltaR2(aTau->p4(),pi0P4)<signalConeR2){
+	if(deltaR2(aTau->p4(),pi0P4_tmp)<signalConeR2 &&
+	   pi0P4_tmp.pt()>pi0P4.pt()){
+	  pi0P4 = pi0P4_tmp;
+	  pi0_dau_P4.swap(pi0_dau_P4_tmp);
+	}
+      }
+      else{
+	if(deltaR2(aTau->p4(),pi0P4_tmp)<signalConeR2 ||
+	   deltaR2(aTau->leadChargedHadrCand()->p4(),pi0P4_tmp)<
+	   deltaR2(aTau->leadChargedHadrCand()->p4(),pi0P4) ){
+	  pi0P4 = pi0P4_tmp;
+	  pi0_dau_P4.swap(pi0_dau_P4_tmp);
+	}
+      }
+    }
+  }
+
+  return stripGammaIds.size();
+}
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+std::set<size_t>
+MiniAODVertexAnalyzer::buildStrip(const std::vector<reco::Candidate::LorentzVector> &signalGammas,
+				  std::set<size_t> & usedGammaIds){
+  //this assumes that gammas are sorted in pt
+
+  std::set<size_t> stripGammaIds;
+  //look for seed
+  size_t seedId=0;
+  for(size_t i=1; i<signalGammas.size(); ++i){
+    if(usedGammaIds.find(i)==usedGammaIds.end()){
+      seedId=i;
+      usedGammaIds.insert(i);
+      stripGammaIds.insert(i);
+      break;
+    }
+  }
+  float seedDEta = std::clamp(0.197077*std::pow(signalGammas[seedId].pt(),-0.658701),0.05,0.15);
+  float seedDPhi = std::clamp(0.352476*std::pow(signalGammas[seedId].pt(),-0.707716),0.05,0.3);
+  for(size_t i=seedId; i<signalGammas.size(); ++i){
+    if(usedGammaIds.find(i)!=usedGammaIds.end()) continue;
+    float dEta = seedDEta + std::clamp(0.197077*std::pow(signalGammas[i].pt(),-0.658701),0.05,0.15);
+    float dPhi = seedDPhi + std::clamp(0.352476*std::pow(signalGammas[i].pt(),-0.707716),0.05,0.3);
+    if(std::abs(signalGammas[0].eta()-signalGammas[i].eta())>=dEta) continue;
+    if(std::abs(deltaPhi(signalGammas[0].phi(),signalGammas[i].phi()))>=dPhi) continue;
+    usedGammaIds.insert(i);
+    stripGammaIds.insert(i);
+  }
+  return stripGammaIds;
+
 }
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////

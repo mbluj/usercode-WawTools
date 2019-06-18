@@ -87,6 +87,11 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     bool diEVeto(const edm::Handle<std::vector<pat::Electron> > &eColl,
 		 const edm::Handle<reco::VertexCollection> &vtxColl);
 
+    size_t recoverStrips(const pat::Tau *aTau,
+			 std::vector<reco::Candidate::LorentzVector> &pi0_dau_P4);
+    std::set<size_t> buildStrip(const std::vector<reco::Candidate::LorentzVector> &signalGammas,
+				std::set<size_t> & usedGammaIds);
+
     ///Set PCA vector for reco taus. This must be run AFTER
     ///vertex refitting.
     bool setPCAVectors(const edm::Event & iEvent, const edm::EventSetup & iSetup);
