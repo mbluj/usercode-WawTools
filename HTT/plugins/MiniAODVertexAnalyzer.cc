@@ -575,13 +575,17 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
     myEvent_->recoEvent_.nGammaInConePlus_ = 0;
     myEvent_->recoEvent_.gammaPtSumInScPlus_ = 0;
     myEvent_->recoEvent_.gammaPtSumOutScPlus_ = 0;
-    myEvent_->recoEvent_.dR2midPlus_ = (aTau->signalGammaCands().size()>0 ? 0 : 99);
-    float sumPt2 = (aTau->signalGammaCands().size()>0 ? 0 : 1);
+    unsigned int nStrips = (aTau->signalGammaCands().size()>0 ? 1 : 0);
+    myEvent_->recoEvent_.nStripPlus_ = nStrips;
+    myEvent_->recoEvent_.dR2midPlus_ = (nStrips>0 ? 0 : 99);
+    float sumPt2 = (nStrips>0 ? 0 : 1);
     float signalConeR2 = std::clamp(3.0/aTau->pt(),0.05,0.1);
     signalConeR2 *= signalConeR2;
+    float maxPt = 0;
     for(size_t j=0; j<aTau->signalGammaCands().size(); ++j){
       float gammaPt = aTau->signalGammaCands()[j]->pt();
       if(!(gammaPt>0.5)) continue;
+      if(gammaPt>maxPt) maxPt = gammaPt;
       myEvent_->recoEvent_.nGammaPlus_++;
       sumPt2 += gammaPt*gammaPt;
       float dR2 = deltaR2(aTau->p4(),aTau->signalGammaCands()[j]->p4());
@@ -595,6 +599,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 	myEvent_->recoEvent_.gammaPtSumOutScPlus_ += gammaPt;
       }
     }
+    myEvent_->recoEvent_.maxGammaPtPlus_ = maxPt;
     myEvent_->recoEvent_.pi0Plus_.SetXYZT(pi0P4.px(),
 					  pi0P4.py(),
 					  pi0P4.pz(),
@@ -784,13 +789,17 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
     myEvent_->recoEvent_.nGammaInConeMinus_ = 0;
     myEvent_->recoEvent_.gammaPtSumInScMinus_ = 0;
     myEvent_->recoEvent_.gammaPtSumOutScMinus_ = 0;
-    myEvent_->recoEvent_.dR2midMinus_ = (aTau->signalGammaCands().size()>0 ? 0 : 99);
-    float sumPt2 = (aTau->signalGammaCands().size()>0 ? 0 : 1);
+    unsigned int nStrips = (aTau->signalGammaCands().size()>0 ? 1 : 0);
+    myEvent_->recoEvent_.nStripMinus_ = nStrips;
+    myEvent_->recoEvent_.dR2midMinus_ = (nStrips>0 ? 0 : 99);
+    float sumPt2 = (nStrips>0 ? 0 : 1);
     float signalConeR2 = std::clamp(3.0/aTau->pt(),0.05,0.1);
     signalConeR2 *= signalConeR2;
+    float maxPt = 0;
     for(size_t j=0; j<aTau->signalGammaCands().size(); ++j){
       float gammaPt = aTau->signalGammaCands()[j]->pt();
       if(!(gammaPt>0.5)) continue;
+      if(gammaPt>maxPt) maxPt = gammaPt;
       myEvent_->recoEvent_.nGammaMinus_++;
       sumPt2 += gammaPt*gammaPt;
       float dR2 = deltaR2(aTau->p4(),aTau->signalGammaCands()[j]->p4());
@@ -804,6 +813,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 	myEvent_->recoEvent_.gammaPtSumOutScMinus_ += gammaPt;
       }
     }
+    myEvent_->recoEvent_.maxGammaPtMinus_ = maxPt;
     myEvent_->recoEvent_.pi0Minus_.SetXYZT(pi0P4.px(),
 					   pi0P4.py(),
 					   pi0P4.pz(),
