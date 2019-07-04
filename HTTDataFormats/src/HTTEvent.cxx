@@ -35,7 +35,7 @@ void HTTEvent::clear(){
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 DiTauData::DiTauData() : 
-  pfScore_(3), pt2Score_(2), dzVtx_(2){
+  pfScore_(3), pt2Score_(2), dzVtx_(3){
   
   clear();
 }
@@ -70,6 +70,8 @@ void DiTauData::clear(){
   trkPlus_ = TLorentzVector();
   scMinus_ = TLorentzVector();
   scPlus_ = TLorentzVector();
+  neutralMinus_ = TLorentzVector();
+  neutralPlus_ = TLorentzVector();
   tauMinus_ = TLorentzVector();
   tauPlus_ = TLorentzVector();
   pi0Minus_ = TLorentzVector();

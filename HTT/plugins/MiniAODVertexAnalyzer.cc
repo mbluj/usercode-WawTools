@@ -477,12 +477,16 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
   //Find vertex with smallest dz distance wrt genPV
   //and store as pfPV in the gen event
   size_t iGenVtx=0;
-  float dzMin=9999;
+  float dzMin=9999, dzVsPVMin=9999;
   for(size_t iVx=0; iVx<vertices->size(); ++iVx){
     float dz = std::abs( (*vertices)[iVx].z() - myEvent_->genEvent_.thePV_.Z() );
     if( dz < dzMin){
       dzMin=dz;
       iGenVtx=iVx;
+    }
+    float dzVsPV = std::abs( (*vertices)[iVx].z() - (*vertices)[0].z() );
+    if( iVx!=0 && dzVsPV < dzVsPVMin) {
+      dzVsPVMin=dzVsPV;
     }
   }
   myEvent_->genEvent_.pfPV_.SetXYZ((*vertices)[iGenVtx].x(),(*vertices)[iGenVtx].y(),(*vertices)[iGenVtx].z());
@@ -491,6 +495,7 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
   //vtx dz
   if(vertices->size()>1) myEvent_->recoEvent_.dzVtx_[0] = (*vertices)[1].z() - (*vertices)[0].z();
   if(vertices->size()>2) myEvent_->recoEvent_.dzVtx_[1] = (*vertices)[2].z() - (*vertices)[0].z();
+  myEvent_->recoEvent_.dzVtx_[2] = dzVsPVMin;
 
   return true;
 }
@@ -639,6 +644,17 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 		   <<", eta="<<(*eles)[ie].eta()
 		   <<", phi="<<(*eles)[ie].phi()
 		   <<std::endl;
+	  std::cout<<"\t\t associated pfCands ("
+		   <<(*eles)[ie].associatedPackedPFCandidates().size()
+		   <<"):"<<std::endl;
+	  for(size_t ipf=0; ipf<(*eles)[ie].associatedPackedPFCandidates().size(); ++ipf){
+	    std::cout<<"\t\t\t"<<ipf<<". pt="<<(*eles)[ie].associatedPackedPFCandidates()[ipf]->pt()
+		     <<", id="<<(*eles)[ie].associatedPackedPFCandidates()[ipf]->pdgId();
+	    if((*eles)[ie].associatedPackedPFCandidates()[ipf].key()==aTau->leadChargedHadrCand().key()){
+	      std::cout<<" <= leadCharged";
+	    }
+	    std::cout<<std::endl;
+	  }
 	  */
 	  double scE = (*eles)[ie].superCluster()->energy();
 	  double scP = (*eles)[ie].superCluster()->position().r();
@@ -654,6 +670,38 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 		   <<", phi="<<myEvent_->recoEvent_.scPlus_.Phi()
 		   <<std::endl;
 	  */
+	}
+	//look for neutral
+	edm::Handle<edm::View<pat::PackedCandidate> >  cands;
+	iEvent.getByToken(cands_, cands);
+	int neutral_idx = -1;
+	for(size_t ic=0; ic<cands->size(); ++ic){
+	  if((*cands)[ic].pdgId()!=130 || (*cands)[ic].energy()<1.2) continue;
+	  float cell_size = std::abs((*cands)[ic].eta())<1.6 ? 0.087 : 0.17;
+	  if(std::abs(leadCharged->etaAtVtx()-(*cands)[ic].eta())>1.2*cell_size) continue;
+	  if(std::abs(deltaPhi(leadCharged->phiAtVtx(),(*cands)[ic].phi()))>1.2*cell_size) continue;
+	  /*
+	  std::cout<<"\t found neutral candidate"
+		   <<", pt="<<(*cands)[ic].pt()
+		   <<", eta="<<(*cands)[ic].eta()
+		   <<", phi="<<(*cands)[ic].phi()
+		   <<std::endl;
+	  */
+	  if(neutral_idx>-1){
+	    if(deltaR2(leadCharged->etaAtVtx(),leadCharged->phiAtVtx(),(*cands)[ic].eta(),(*cands)[ic].phi()) <
+	       deltaR2(leadCharged->etaAtVtx(),leadCharged->phiAtVtx(),(*cands)[neutral_idx].eta(),(*cands)[neutral_idx].phi()) ){
+	      neutral_idx=ic;
+	    }
+	  }
+	  else{
+	      neutral_idx=ic;
+	  }
+	}
+	if(neutral_idx>-1){
+	  myEvent_->recoEvent_.neutralPlus_.SetXYZT((*cands)[neutral_idx].p4().px(),
+						    (*cands)[neutral_idx].p4().py(),
+						    (*cands)[neutral_idx].p4().pz(),
+						    (*cands)[neutral_idx].p4().e());
 	}
       }
     }
@@ -853,6 +901,17 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 		   <<", eta="<<(*eles)[ie].eta()
 		   <<", phi="<<(*eles)[ie].phi()
 		   <<std::endl;
+	  std::cout<<"\t\t associated pfCands ("
+		   <<(*eles)[ie].associatedPackedPFCandidates().size()
+		   <<"):"<<std::endl;
+	  for(size_t ipf=0; ipf<(*eles)[ie].associatedPackedPFCandidates().size(); ++ipf){
+	    std::cout<<"\t\t\t"<<ipf<<". pt="<<(*eles)[ie].associatedPackedPFCandidates()[ipf]->pt()
+		     <<", id="<<(*eles)[ie].associatedPackedPFCandidates()[ipf]->pdgId();
+	    if((*eles)[ie].associatedPackedPFCandidates()[ipf].key()==aTau->leadChargedHadrCand().key()){
+	      std::cout<<" <= leadCharged";
+	    }
+	    std::cout<<std::endl;
+	  }
 	  */
 	  double scE = (*eles)[ie].superCluster()->energy();
 	  double scP = (*eles)[ie].superCluster()->position().r();
@@ -868,6 +927,38 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 		   <<", phi="<<myEvent_->recoEvent_.scMinus_.Phi()
 		   <<std::endl;
 	  */
+	}
+	//look for neutral
+	edm::Handle<edm::View<pat::PackedCandidate> >  cands;
+	iEvent.getByToken(cands_, cands);
+	int neutral_idx = -1;
+	for(size_t ic=0; ic<cands->size(); ++ic){
+	  if((*cands)[ic].pdgId()!=130 || (*cands)[ic].energy()<1.2) continue;
+	  float cell_size = std::abs((*cands)[ic].eta())<1.6 ? 0.087 : 0.17;
+	  if(std::abs(leadCharged->etaAtVtx()-(*cands)[ic].eta())>1.2*cell_size) continue;
+	  if(std::abs(deltaPhi(leadCharged->phiAtVtx(),(*cands)[ic].phi()))>1.2*cell_size) continue;
+	  /*
+	  std::cout<<"\t found neutral candidate"
+		   <<", pt="<<(*cands)[ic].pt()
+		   <<", eta="<<(*cands)[ic].eta()
+		   <<", phi="<<(*cands)[ic].phi()
+		   <<std::endl;
+	  */
+	  if(neutral_idx>-1){
+	    if(deltaR2(leadCharged->etaAtVtx(),leadCharged->phiAtVtx(),(*cands)[ic].eta(),(*cands)[ic].phi()) <
+	       deltaR2(leadCharged->etaAtVtx(),leadCharged->phiAtVtx(),(*cands)[neutral_idx].eta(),(*cands)[neutral_idx].phi()) ){
+	      neutral_idx=ic;
+	    }
+	  }
+	  else{
+	      neutral_idx=ic;
+	  }
+	}
+	if(neutral_idx>-1){
+	  myEvent_->recoEvent_.neutralMinus_.SetXYZT((*cands)[neutral_idx].p4().px(),
+						     (*cands)[neutral_idx].p4().py(),
+						     (*cands)[neutral_idx].p4().pz(),
+						     (*cands)[neutral_idx].p4().e());
 	}
       }
     }

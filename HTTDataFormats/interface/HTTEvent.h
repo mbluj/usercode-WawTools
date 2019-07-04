@@ -29,6 +29,7 @@ class DiTauData{
   TLorentzVector piMinus_, piPlus_;
   TLorentzVector trkMinus_, trkPlus_;
   TLorentzVector scMinus_, scPlus_;
+  TLorentzVector neutralMinus_, neutralPlus_;
   TLorentzVector tauMinus_, tauPlus_;
   TLorentzVector visTauMinus_, visTauPlus_;
   TLorentzVector pi0Minus_, pi0Plus_;
