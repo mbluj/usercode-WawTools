@@ -484,8 +484,8 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
       dzMin=dz;
       iGenVtx=iVx;
     }
-    float dzVsPV = std::abs( (*vertices)[iVx].z() - (*vertices)[0].z() );
-    if( iVx!=0 && dzVsPV < dzVsPVMin) {
+    float dzVsPV = (*vertices)[iVx].z() - (*vertices)[0].z();
+    if( iVx!=0 && std::abs(dzVsPV) < std::abs(dzVsPVMin) ) {
       dzVsPVMin=dzVsPV;
     }
   }
