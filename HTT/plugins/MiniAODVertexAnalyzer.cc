@@ -1065,6 +1065,7 @@ bool MiniAODVertexAnalyzer::setPCAVectors(const edm::Event & iEvent, const edm::
 					   leadTrackMinus->p());
   }
 
+  ///Hybrid PV: refited x,y w/ BS, z from AOD
   GlobalPoint aPoint(myEvent_->recoEvent_.refitPfPV_.X(),
 		     myEvent_->recoEvent_.refitPfPV_.Y(),
 		     myEvent_->recoEvent_.thePV_.Z());
@@ -1080,7 +1081,7 @@ bool MiniAODVertexAnalyzer::setPCAVectors(const edm::Event & iEvent, const edm::
   myEvent_->recoEvent_.nPiPlusAODvx_ = getPCA(iEvent,iSetup, leadTrackPlus, aPoint);
   myEvent_->recoEvent_.nPiMinusAODvx_ = getPCA(iEvent,iSetup, leadTrackMinus, aPoint);
   
-  ///PV refit (excluding tau tracks?)
+  ///PV refit w/ BS (excluding tau tracks)
   aPoint = GlobalPoint(myEvent_->recoEvent_.refitPfPV_.X(),
 		       myEvent_->recoEvent_.refitPfPV_.Y(),
 		       myEvent_->recoEvent_.refitPfPV_.Z());
@@ -1093,7 +1094,23 @@ bool MiniAODVertexAnalyzer::setPCAVectors(const edm::Event & iEvent, const edm::
 		       myEvent_->genEvent_.thePV_.Z());
   myEvent_->recoEvent_.nPiPlusGenvx_ = getPCA(iEvent,iSetup, leadTrackPlus, aPoint);
   myEvent_->recoEvent_.nPiMinusGenvx_ = getPCA(iEvent,iSetup, leadTrackMinus, aPoint);
+
+  ///Some other vertices for studies (stored in gen event!!!)
+  ///Hybrid reco-gen: refited x,y w/ BS, z from gen
+  aPoint = GlobalPoint(myEvent_->recoEvent_.refitPfPV_.X(),
+		       myEvent_->recoEvent_.refitPfPV_.Y(),
+		       myEvent_->genEvent_.thePV_.Z());
+  myEvent_->genEvent_.nPiPlusGenvx_ = getPCA(iEvent,iSetup, leadTrackPlus, aPoint);
+  myEvent_->genEvent_.nPiMinusGenvx_ = getPCA(iEvent,iSetup, leadTrackMinus, aPoint);
   
+  ///PV refit w/ BS (excluding tau tracks)
+  aPoint = GlobalPoint(myEvent_->recoEvent_.refitPfPVNoBS_.X(),
+		       myEvent_->recoEvent_.refitPfPVNoBS_.Y(),
+		       myEvent_->recoEvent_.refitPfPVNoBS_.Z());
+  myEvent_->genEvent_.nPiPlusRefitvx_ = getPCA(iEvent,iSetup, leadTrackPlus, aPoint);
+  myEvent_->genEvent_.nPiMinusRefitvx_ = getPCA(iEvent,iSetup, leadTrackMinus, aPoint);
+
+
   return true;
 }
 /////////////////////////////////////////////////////////////////
