@@ -81,6 +81,7 @@ class HTTEvent {
   
   float run_, lumi_, event_;
   int bosonId_;
+  std::vector<float> tauSpinnerWeight_;
 
   int nPV_;
   bool diMuonVeto_, diEleVeto_;

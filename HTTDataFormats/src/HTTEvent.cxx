@@ -7,7 +7,8 @@
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-HTTEvent::HTTEvent(){
+HTTEvent::HTTEvent() :
+  tauSpinnerWeight_(0) {
 
   clear();
   
@@ -23,6 +24,8 @@ void HTTEvent::clear(){
   lumi_ = -999;
   event_ = -999;
   bosonId_ = 0;
+
+  for(size_t i=0; i<tauSpinnerWeight_.size(); ++i) tauSpinnerWeight_[i]=1;
 
   nPV_ = 0;
   diMuonVeto_ = false;

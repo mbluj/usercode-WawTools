@@ -34,6 +34,7 @@
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "WarsawAnalysis/HTTDataFormats/interface/HTTEvent.h"
+#include "TauSpinner/SimpleParticle.h"
 
 #include "TTree.h"
 #include "TLorentzVector.h"
@@ -128,7 +129,18 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
 
     std::pair<const reco::Candidate*, const reco::Candidate*> thePair_;
     
-       
+    //TauSpinner inputs
+    std::string TauSpinnerSettingsPDF_;
+    bool Ipp_;
+    int Ipol_;
+    int nonSM2_;
+    int nonSMN_;
+    double CMSENE_;
+    std::vector<float> theta_;
+
+    //Helper functions for TauSpinner
+    TauSpinner::SimpleParticle convertToSimplePart(const reco::GenParticle& aPart);
+    void initializeTauSpinner();
 };
 
 #endif

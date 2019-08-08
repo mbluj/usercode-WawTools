@@ -43,6 +43,11 @@ namespace WawGenInfoHelper {
   int getTausDecays(const reco::GenParticleRef& tau,
 		    reco::GenParticleRefVector& products,
 		    bool ignoreNus=true,bool direct=false);
+  int getFinalTauHadrs(const reco::GenParticleRef& tau,
+                       reco::GenParticleRefVector& products,
+                       bool ignoreNus=true);
+  void getDaughtersHdrs(const reco::GenParticleRef& part,
+                        reco::GenParticleRefVector& daus);
   const reco::GenParticleRef getLeadChParticle(const reco::GenParticleRefVector& products);
   TLorentzVector getP4(const reco::GenParticleRef& part);
   TLorentzVector getP4(const reco::GenParticle&  part);

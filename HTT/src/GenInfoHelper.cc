@@ -305,6 +305,37 @@ namespace WawGenInfoHelper {
   }
 
   //////////////
+  int getFinalTauHadrs(const reco::GenParticleRef& tau,
+		       reco::GenParticleRefVector& products,
+		       bool ignoreNus){
+
+    int dm = getTausDecays(tau, products, ignoreNus, true);
+    reco::GenParticleRefVector products_tmp;
+    for(IGR idr = products.begin(); idr != products.end(); ++idr)
+      getDaughtersHdrs(*idr,products_tmp);
+    products.swap(products_tmp);
+
+    return dm;
+  }
+
+  //////////////
+  void getDaughtersHdrs(const reco::GenParticleRef& part,
+			reco::GenParticleRefVector& daus) {
+
+    const reco::GenParticleRefVector& dausRefs = part->daughterRefVector();
+    if(dausRefs.empty() //stable
+       || std::abs(part->pdgId())==111 //or pi0
+       //|| std::abs(part->pdgId())==311 //or K0
+       ){
+      daus.push_back(part);
+    }
+    else{
+      for(IGR idr = dausRefs.begin(); idr != dausRefs.end(); ++idr)
+	getDaughtersHdrs(*idr,daus);
+    }
+  }
+
+  //////////////
   TLorentzVector getGenMet(const reco::GenParticleRefVector& particles){
 
     float metX=0, metY=0;

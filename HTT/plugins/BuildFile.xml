@@ -24,6 +24,9 @@
   <use   name="SimDataFormats/GeneratorProducts"/>
   <use   name="root"/>
 
+  <use name="tauolapp"/>
+  <use name="lhapdf"/>
+
   <use   name="WarsawAnalysis/HTT"/>
   <use   name="WarsawAnalysis/HTTDataFormats"/>
 

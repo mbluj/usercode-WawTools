@@ -29,6 +29,7 @@
 
 //#include "DataFormats/GeometryVector/interface/LocalPoint.h"
 
+#include "TauSpinner/tau_reweight_lib.h"
 
 MiniAODVertexAnalyzer::MiniAODVertexAnalyzer(const edm::ParameterSet & iConfig) :
   scores_(consumes<edm::ValueMap<float> >(iConfig.getParameter<edm::InputTag>("vertexScores"))),
@@ -54,6 +55,19 @@ MiniAODVertexAnalyzer::MiniAODVertexAnalyzer(const edm::ParameterSet & iConfig) 
   tree_->Branch("HTTEvent", &myEvent_); 
 
   thePair_ = std::make_pair<const reco::Candidate*, const reco::Candidate*>(0,0); 
+
+  //TauSpinner inputs
+  TauSpinnerSettingsPDF_ = "NNPDF30_nlo_as_0118";
+  Ipp_ = true;
+  Ipol_ = 0;
+  nonSM2_ = 0;
+  nonSMN_ = 0;
+  CMSENE_ = 13000.0;
+  theta_.push_back(0.);//scalar
+  theta_.push_back(M_PI/2.);//pseudoscalar (pi/2)
+  theta_.push_back(M_PI/4.);//maxmix (pi/4)
+  initializeTauSpinner();
+
 }
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -180,6 +194,72 @@ bool MiniAODVertexAnalyzer::getGenData(const edm::Event & iEvent, const edm::Eve
   
   WawGenInfoHelper::setP4Ptr(myEvent_->genEvent_.tauMinus_+myEvent_->genEvent_.tauPlus_,
 			     &myEvent_->genEvent_.p4Sum_);
+
+  //TauSpinner weights
+  std::vector<float> tauSpinnerWeight(theta_.size());
+  //only for H:
+  if(myEvent_->bosonId_==25 && taus.size()==2){
+    TauSpinner::SimpleParticle simple_boson = convertToSimplePart(*theBoson);
+    TauSpinner::SimpleParticle simple_tau1 = convertToSimplePart(*taus[0]);
+    TauSpinner::SimpleParticle simple_tau2 = convertToSimplePart(*taus[1]);
+    std::vector<TauSpinner::SimpleParticle> simple_tau1_daughters;
+    reco::GenParticleRefVector tau1_direct_daughters;
+    WawGenInfoHelper::getFinalTauHadrs(taus[0],tau1_direct_daughters,false);
+    for(auto ref: tau1_direct_daughters) {
+      //if(ref->pdgId()==22) continue;
+      simple_tau1_daughters.push_back(convertToSimplePart(*ref));
+    }
+    std::vector<TauSpinner::SimpleParticle> simple_tau2_daughters;
+    reco::GenParticleRefVector tau2_direct_daughters;
+    WawGenInfoHelper::getFinalTauHadrs(taus[1],tau2_direct_daughters,false);
+    for(auto ref: tau2_direct_daughters) {
+      //if(ref->pdgId()==22) continue;
+      simple_tau2_daughters.push_back(convertToSimplePart(*ref));
+    }
+    //
+    for(size_t i=0;i<theta_.size();++i){
+      //Can make this more general by having boson pdgid as input or have option for set boson type
+      TauSpinner::setHiggsParametersTR(-cos(2*M_PI*theta_[i]),
+				       cos(2*M_PI*theta_[i]),
+				       -sin(2*M_PI*theta_[i]),
+				       -sin(2*M_PI*theta_[i]));
+      tauSpinnerWeight[i] =
+	TauSpinner::calculateWeightFromParticlesH(simple_boson,
+						  simple_tau1,
+						  simple_tau2,
+						  simple_tau1_daughters,
+						  simple_tau2_daughters);
+    }
+    /*FIXME: to often weight ==1?! Rare decays involved here. Others too?*/
+    /*probably fine accorgingly to https://arxiv.org/abs/1802.05459, Tab. 2 */
+    /*
+    if(!theta_.empty()&&
+       tauSpinnerWeight[0]==1&&
+       tauSpinnerWeight[0]==tauSpinnerWeight.back()
+       &&myEvent_->genEvent_.decModePlus_!=17&&myEvent_->genEvent_.decModeMinus_!=17){
+      std::cout<<"Weight = ";
+      for(size_t i=0;i<theta_.size();++i)
+	std::cout<<tauSpinnerWeight[i]<<" ";
+      std::cout<<"!!!"<<std::endl;
+      std::cout<<"\t tau1: "<<simple_tau1.pdgid()
+	       <<", dm: "<<myEvent_->genEvent_.decModeMinus_
+	       <<std::endl;
+      for(auto dau: simple_tau1_daughters)
+	std::cout<<"\t\t tau1_dau: "<<dau.pdgid()<<std::endl;
+      std::cout<<"\t tau2: "<<simple_tau2.pdgid()
+	       <<", dm: "<<myEvent_->genEvent_.decModePlus_
+	       <<std::endl;
+      for(auto dau: simple_tau2_daughters)
+	std::cout<<"\t\t tau2_dau: "<<dau.pdgid()<<std::endl;
+    }
+    */
+  }
+  else{
+    for(size_t i=0;i<theta_.size();++i){
+      tauSpinnerWeight[i] = 1;
+    }
+  }
+  myEvent_->tauSpinnerWeight_ = tauSpinnerWeight;
 
   return true;
 }
@@ -1529,7 +1609,7 @@ bool MiniAODVertexAnalyzer::diEVeto(const edm::Handle<std::vector<pat::Electron>
 }
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
-bool  MiniAODVertexAnalyzer::getPVBalance(const edm::Event & iEvent, size_t iPV){
+bool MiniAODVertexAnalyzer::getPVBalance(const edm::Event & iEvent, size_t iPV){
 
   edm::Handle<edm::View<pat::PackedCandidate> >  cands;
   iEvent.getByToken(cands_, cands);
@@ -1662,6 +1742,21 @@ bool  MiniAODVertexAnalyzer::getPVBalance(const edm::Event & iEvent, size_t iPV)
   
   return true;
 }
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+TauSpinner::SimpleParticle MiniAODVertexAnalyzer::convertToSimplePart(const reco::GenParticle &aPart){
+  return TauSpinner::SimpleParticle(aPart.px(), aPart.py(), aPart.pz(), aPart.energy(), aPart.pdgId());
+}
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+void MiniAODVertexAnalyzer::initializeTauSpinner(){
+  Tauolapp::Tauola::initialize();
+  LHAPDF::initPDFSetByName(TauSpinnerSettingsPDF_);
+  TauSpinner::initialize_spinner(Ipp_, Ipol_, nonSM2_, nonSMN_,  CMSENE_);
+}
+
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 void MiniAODVertexAnalyzer::beginJob(){}
