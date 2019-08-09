@@ -17,6 +17,7 @@ class DiTauData{
 
   ///Data common for generator and reconstruction levels.
   int decModeMinus_, decModePlus_;
+  int decModeMVAMinus_, decModeMVAPlus_;
   float dzMinus_, dzPlus_;
   TVector3 thePV_;
   TVector3 svMinus_, svPlus_;

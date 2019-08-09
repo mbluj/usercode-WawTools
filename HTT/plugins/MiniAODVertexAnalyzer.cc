@@ -653,7 +653,8 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
       myEvent_->recoEvent_.antiMuWpPlus_ = 1;
     if(aTau->tauID("againstMuonTight3") > 0.5)
       myEvent_->recoEvent_.antiMuWpPlus_ = 2;
-    myEvent_->recoEvent_.decModePlus_ = aTau->decayMode();    
+    myEvent_->recoEvent_.decModePlus_ = aTau->decayMode();
+    myEvent_->recoEvent_.decModeMVAPlus_ = (int)aTau->tauID("MVADM2017v1");
     //pi0's
     reco::Candidate::LorentzVector pi0P4;
     myEvent_->recoEvent_.nGammaPlus_ = 0;
@@ -808,6 +809,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
     if(aMu!=nullptr){
       myEvent_->recoEvent_.isoPlus_ = muRelIso(aMu);
       myEvent_->recoEvent_.decModePlus_ = WawGenInfoHelper::tauDecayModes::tauDecayMuon;
+      myEvent_->recoEvent_.decModeMVAPlus_ = WawGenInfoHelper::tauDecayModes::tauDecayMuon;
       myEvent_->recoEvent_.leadIdPlus_ = aMu->pdgId();
       myEvent_->recoEvent_.dzPlus_ = aMu->muonBestTrack()->dz((*vertices)[0].position());
       myEvent_->recoEvent_.piPlus_.SetXYZT(aMu->p4().px(),
@@ -820,6 +822,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
       if(aEle!=nullptr){
 	myEvent_->recoEvent_.isoPlus_ = eRelIso(aEle);
 	myEvent_->recoEvent_.decModePlus_ = WawGenInfoHelper::tauDecayModes::tauDecaysElectron;
+	myEvent_->recoEvent_.decModeMVAPlus_ = WawGenInfoHelper::tauDecayModes::tauDecaysElectron;
 	myEvent_->recoEvent_.leadIdPlus_ = aEle->pdgId();
 	myEvent_->recoEvent_.dzPlus_ = aEle->gsfTrack()->dz((*vertices)[0].position());
 	myEvent_->recoEvent_.piPlus_.SetXYZT(aEle->p4().px(),
@@ -910,7 +913,8 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
       myEvent_->recoEvent_.antiMuWpMinus_ = 1;
     if(aTau->tauID("againstMuonTight3") > 0.5)
       myEvent_->recoEvent_.antiMuWpMinus_ = 2;
-    myEvent_->recoEvent_.decModeMinus_ = aTau->decayMode();    
+    myEvent_->recoEvent_.decModeMinus_ = aTau->decayMode();
+    myEvent_->recoEvent_.decModeMVAMinus_ = (int)aTau->tauID("MVADM2017v1");
     //pi0's
     reco::Candidate::LorentzVector pi0P4;
     myEvent_->recoEvent_.nGammaMinus_ = 0;
@@ -1065,6 +1069,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
     if(aMu!=nullptr){
       myEvent_->recoEvent_.isoMinus_ = muRelIso(aMu);
       myEvent_->recoEvent_.decModeMinus_ = WawGenInfoHelper::tauDecayModes::tauDecayMuon;
+      myEvent_->recoEvent_.decModeMVAMinus_ = WawGenInfoHelper::tauDecayModes::tauDecayMuon;
       myEvent_->recoEvent_.leadIdMinus_ = aMu->pdgId();
       myEvent_->recoEvent_.dzMinus_ = aMu->muonBestTrack()->dz((*vertices)[0].position());
       myEvent_->recoEvent_.piMinus_.SetXYZT(aMu->p4().px(),
@@ -1077,6 +1082,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
       if(aEle!=nullptr){
 	myEvent_->recoEvent_.isoMinus_ = eRelIso(aEle);
 	myEvent_->recoEvent_.decModeMinus_ = WawGenInfoHelper::tauDecayModes::tauDecaysElectron;
+	myEvent_->recoEvent_.decModeMVAMinus_ = WawGenInfoHelper::tauDecayModes::tauDecaysElectron;
 	myEvent_->recoEvent_.leadIdMinus_ = aEle->pdgId();
 	myEvent_->recoEvent_.dzMinus_ = aEle->gsfTrack()->dz((*vertices)[0].position());
 	myEvent_->recoEvent_.piMinus_.SetXYZT(aEle->p4().px(),

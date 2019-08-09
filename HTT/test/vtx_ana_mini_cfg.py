@@ -221,12 +221,13 @@ process.load("WarsawAnalysis.HTT.miniVtxAna_cfi")
 updatedTauName = "slimmedTausUpdated"
 import RecoTauTag.RecoTau.tools.runTauIdMVA as tauIdConfig
 tauIdEmbedder = tauIdConfig.TauIDEmbedder(process, cms, 
-		    debug = True,
+		    debug = False,
                     updatedTauName = updatedTauName,
                     toKeep = ["2017v2", "newDM2017v2",
 			      "againstEle2018",
-			      "deepTau2017v2",
-			      "MVADM_2016_v1","MVADM_2017_v1",
+			      #"deepTau2017v2",
+			      #"MVADM_2016_v1",
+			      "MVADM_2017_v1",
 			      ])
 tauIdEmbedder.runTauID()
 

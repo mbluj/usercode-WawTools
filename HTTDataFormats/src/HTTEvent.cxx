@@ -50,11 +50,11 @@ DiTauData::~DiTauData(){}
 void DiTauData::clear(){
 
 #ifdef PROJECT_NAME
-  decModeMinus_ = WawGenInfoHelper::tauDecayModes::tauDecayOther;
-  decModePlus_ = WawGenInfoHelper::tauDecayModes::tauDecayOther;
+  decModeMVAMinus_ = decModeMinus_ = WawGenInfoHelper::tauDecayModes::tauDecayOther;
+  decModeMVAPlus_ = decModePlus_ = WawGenInfoHelper::tauDecayModes::tauDecayOther;
 #else
-  decModeMinus_  = 99;
-  decModePlus_  = 99;
+  decModeMVAMinus_ = decModeMinus_  = 99;
+  decModeMVAPlus_ = decModePlus_  = 99;
 #endif
 
   dzPlus_ = 99;
