@@ -218,7 +218,6 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
 )
 
 process.load("WarsawAnalysis.HTT.miniVtxAna_cfi")
-#process.load("PhysicsTools.NanoAOD.taus_updatedMVAIds_cff")
 updatedTauName = "slimmedTausUpdated"
 import RecoTauTag.RecoTau.tools.runTauIdMVA as tauIdConfig
 tauIdEmbedder = tauIdConfig.TauIDEmbedder(process, cms, 
@@ -238,7 +237,6 @@ process.vtxAnaNoTauTracks = process.vtxAna.clone(
 
 process.p = cms.Path(
     process.printTree+
-    #process.patTauMVAIDsSeq+
     process.rerunMvaIsolationSequence+
     getattr(process,updatedTauName)+
     process.vtxAna
