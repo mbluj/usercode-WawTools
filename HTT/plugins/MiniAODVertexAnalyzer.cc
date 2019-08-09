@@ -614,21 +614,21 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
   myEvent_->recoEvent_.antiMuWpPlus_ = 0;
   const pat::Tau* aTau = dynamic_cast<const pat::Tau*>(thePair_.first);
   if(aTau!=nullptr){
-    if(aTau->tauID("byVVLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byVVLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpPlus_ = 1;
-    if(aTau->tauID("byVLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byVLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpPlus_ = 2;
-    if(aTau->tauID("byLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpPlus_ = 3;
-    if(aTau->tauID("byMediumIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byMediumIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpPlus_ = 4;
-    if(aTau->tauID("byTightIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byTightIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpPlus_ = 5;
-    if(aTau->tauID("byVTightIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byVTightIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpPlus_ = 6;
-    if(aTau->tauID("byVVTightIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byVVTightIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpPlus_ = 7;
-    myEvent_->recoEvent_.isoPlus_ = aTau->tauID("byIsolationMVArun2v1DBnewDMwLTraw2017v2");
+    myEvent_->recoEvent_.isoPlus_ = aTau->tauID("byIsolationMVArun2017v2DBnewDMwLTraw2017");
     if(aTau->tauID("againstElectronVLooseMVA6") > 0.5)
       myEvent_->recoEvent_.antiEWpPlus_ = 1;
     if(aTau->tauID("againstElectronLooseMVA6") > 0.5)
@@ -871,21 +871,21 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
   myEvent_->recoEvent_.antiMuWpMinus_ = 0;
   aTau = dynamic_cast<const pat::Tau*>(thePair_.second);
   if(aTau!=nullptr){
-    if(aTau->tauID("byVVLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byVVLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpMinus_ = 1;
-    if(aTau->tauID("byVLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byVLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpMinus_ = 2;
-    if(aTau->tauID("byLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpMinus_ = 3;
-    if(aTau->tauID("byMediumIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byMediumIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpMinus_ = 4;
-    if(aTau->tauID("byTightIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byTightIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpMinus_ = 5;
-    if(aTau->tauID("byVTightIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byVTightIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpMinus_ = 6;
-    if(aTau->tauID("byVVTightIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5)
+    if(aTau->tauID("byVVTightIsolationMVArun2017v2DBnewDMwLT2017") > 0.5)
       myEvent_->recoEvent_.isoMVAWpMinus_ = 7;
-    myEvent_->recoEvent_.isoMinus_ = aTau->tauID("byIsolationMVArun2v1DBnewDMwLTraw2017v2");
+    myEvent_->recoEvent_.isoMinus_ = aTau->tauID("byIsolationMVArun2017v2DBnewDMwLTraw2017");
     if(aTau->tauID("againstElectronVLooseMVA6") > 0.5)
       myEvent_->recoEvent_.antiEWpMinus_ = 1;
     if(aTau->tauID("againstElectronLooseMVA6") > 0.5)
@@ -1387,7 +1387,7 @@ MiniAODVertexAnalyzer::findMTPair(const edm::Handle<std::vector<pat::Muon> > &mu
 	&& (*tauColl)[i].tauID("againstMuonLoose3") > 0.5
 	//&& (*tauColl)[i].tauID("photonPtSumOutsideSignalCone") < 0.1 * (*tauColl)[i].pt()
 	//&& (*tauColl)[i].tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") < 3.0 //Loose <2.5, Medium<1.5, Tight<0.8
-	&& (*tauColl)[i].tauID("byVVLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5
+	&& (*tauColl)[i].tauID("byVVLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5
 	)
       taus.push_back(&(*tauColl)[i]);
   }
@@ -1398,8 +1398,8 @@ MiniAODVertexAnalyzer::findMTPair(const edm::Handle<std::vector<pat::Muon> > &mu
 	      //return a->pt() > b->pt();
 	      //return a->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") <
 	      //       b->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits");
-	      return a->tauID("byIsolationMVArun2v1DBnewDMwLTraw2017v2") >
-		     b->tauID("byIsolationMVArun2v1DBnewDMwLTraw2017v2");
+	      return a->tauID("byIsolationMVArun2017v2DBnewDMwLTraw2017") >
+		     b->tauID("byIsolationMVArun2017v2DBnewDMwLTraw2017");
 	    });
 
   for(size_t i=0; i<taus.size(); ++i){
@@ -1461,7 +1461,7 @@ MiniAODVertexAnalyzer::findETPair(const edm::Handle<std::vector<pat::Electron> >
 	&& (*tauColl)[i].tauID("againstMuonLoose3") > 0.5
 	//&& (*tauColl)[i].tauID("photonPtSumOutsideSignalCone") < 0.1 * (*tauColl)[i].pt()
 	//&& (*tauColl)[i].tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") < 3.0 //Loose <2.5, Medium<1.5, Tight<0.8
-	&& (*tauColl)[i].tauID("byVVLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5
+	&& (*tauColl)[i].tauID("byVVLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5
 	)
       taus.push_back(&(*tauColl)[i]);
   }
@@ -1472,8 +1472,8 @@ MiniAODVertexAnalyzer::findETPair(const edm::Handle<std::vector<pat::Electron> >
 	      //return a->pt() > b->pt();
 	      //return a->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") <
 	      //       b->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits");
-	      return a->tauID("byIsolationMVArun2v1DBnewDMwLTraw2017v2") >
-		     b->tauID("byIsolationMVArun2v1DBnewDMwLTraw2017v2");
+	      return a->tauID("byIsolationMVArun2017v2DBnewDMwLTraw2017") >
+		     b->tauID("byIsolationMVArun2017v2DBnewDMwLTraw2017");
 	    });
 
   for(size_t i=0; i<taus.size(); ++i){
@@ -1515,7 +1515,7 @@ MiniAODVertexAnalyzer::findTTPair(const edm::Handle<std::vector<pat::Tau> > &tau
 	&& (*tauColl)[i].tauID("againstMuonLoose3") > 0.5
 	//&& (*tauColl)[i].tauID("photonPtSumOutsideSignalCone") < 0.1 * (*tauColl)[i].pt()
 	//&& (*tauColl)[i].tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") < 3.0 //Loose <2.5, Medium<1.5, Tight<0.8
-	&& (*tauColl)[i].tauID("byVVLooseIsolationMVArun2v1DBnewDMwLT2017v2") > 0.5
+	&& (*tauColl)[i].tauID("byVVLooseIsolationMVArun2017v2DBnewDMwLT2017") > 0.5
 	)
       taus.push_back(&(*tauColl)[i]);
   }
@@ -1525,8 +1525,8 @@ MiniAODVertexAnalyzer::findTTPair(const edm::Handle<std::vector<pat::Tau> > &tau
 	      //return a->pt() > b->pt();
 	      //return a->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits") <
 	      //       b->tauID("byCombinedIsolationDeltaBetaCorrRaw3Hits");
-	      return a->tauID("byIsolationMVArun2v1DBnewDMwLTraw2017v2") >
-		     b->tauID("byIsolationMVArun2v1DBnewDMwLTraw2017v2");
+	      return a->tauID("byIsolationMVArun2017v2DBnewDMwLTraw2017") >
+		     b->tauID("byIsolationMVArun2017v2DBnewDMwLTraw2017");
 	    });
   for(size_t i=1; i<taus.size(); ++i){
     if(deltaR2(taus[0]->p4(),taus[i]->p4())>0.5*0.5 &&
