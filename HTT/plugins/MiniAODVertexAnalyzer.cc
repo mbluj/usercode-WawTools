@@ -25,9 +25,17 @@
 #include "TrackingTools/GeomPropagators/interface/AnalyticalTrajectoryExtrapolatorToLine.h"
 #include "TrackingTools/GeomPropagators/interface/AnalyticalImpactPointExtrapolator.h"
 
+#include "FastSimulation/BaseParticlePropagator/interface/BaseParticlePropagator.h"
+#include "FastSimulation/Particle/interface/RawParticle.h"
+
 #include "DataFormats/Math/interface/deltaR.h"
 
 //#include "DataFormats/GeometryVector/interface/LocalPoint.h"
+#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
+#include "Geometry/Records/interface/CaloGeometryRecord.h"
+
+#include "MagneticField/Engine/interface/MagneticField.h"
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
 #include "TauSpinner/tau_reweight_lib.h"
 
@@ -45,7 +53,10 @@ MiniAODVertexAnalyzer::MiniAODVertexAnalyzer(const edm::ParameterSet & iConfig) 
   useBeamSpot_(iConfig.getParameter<bool>("useBeamSpot")),
   useLostCands_(iConfig.getParameter<bool>("useLostCands")),
   useTauTracks_(iConfig.getUntrackedParameter<bool>("useTauTracks",false)),
-  verbose_(iConfig.getUntrackedParameter<bool>("verbose",false)){
+  verbose_(iConfig.getUntrackedParameter<bool>("verbose",false)),
+  calibration_(new PFEnergyCalibration),
+  nSigmaECAL_(0)//as in RecoParticleFlow/PFProducer/src/PFAlgo.cc
+{
 
   
   edm::Service<TFileService> fs;
@@ -583,6 +594,9 @@ bool MiniAODVertexAnalyzer::findPrimaryVertices(const edm::Event & iEvent, const
 /////////////////////////////////////////////////////////////////
 bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::EventSetup & iSetup){
 
+  edm::ESHandle<CaloGeometry> caloGeom;
+  iSetup.get<CaloGeometryRecord>().get(caloGeom);
+
   edm::Handle<std::vector<pat::Tau> > tauColl;
   iEvent.getByToken(taus_,tauColl);
   edm::Handle<std::vector<pat::Muon> > muColl;
@@ -739,7 +753,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 	  */
 	  double scE = (*eles)[ie].superCluster()->energy();
 	  double scP = (*eles)[ie].superCluster()->position().r();
-	  math::XYZPoint scMom = ((*eles)[ie].superCluster()->position())*scE/std::max(scP,1e-5);
+	  math::XYZPoint scMom = scP>0 ? ((*eles)[ie].superCluster()->position())*scE/scP : math::XYZPoint();
 	  myEvent_->recoEvent_.scPlus_.SetXYZT(scMom.x(),
 					       scMom.y(),
 					       scMom.z(),
@@ -751,6 +765,138 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 		   <<", phi="<<myEvent_->recoEvent_.scPlus_.Phi()
 		   <<std::endl;
 	  */
+	  if(!((*eles)[ie].pt()>5)) continue;
+	  //treat individual (pf)clusters as gamma cands
+	  //get track position at ECAL entrance
+	  math::XYZTLorentzVector trkMomAtVtx;
+	  const reco::Track *leadTrk = getLeadTrack(iEvent, aTau);
+	  if(leadTrk!=nullptr){
+	    trkMomAtVtx.SetXYZT(leadTrk->px(),
+				leadTrk->py(),
+				leadTrk->pz(),
+				leadTrk->p());
+	  } else {//it should not happen
+	    trkMomAtVtx.SetXYZT(aTau->leadChargedHadrCand()->px(),
+				aTau->leadChargedHadrCand()->py(),
+				aTau->leadChargedHadrCand()->pz(),
+				aTau->leadChargedHadrCand()->p());
+	  }
+	  math::XYZPoint trkPosAtEcalEntrance;
+	  math::XYZTLorentzVector trkMomAtEcalEntrance;
+	  bool reachedECal = atECalEntrance(iSetup,
+					    trkMomAtVtx,
+					    aTau->vertex(),
+					    aTau->charge(),
+					    trkPosAtEcalEntrance,
+					    trkMomAtEcalEntrance);
+
+	  //first look for a cluster matched to the track...
+	  int matchedClIdx=-1;
+	  float matchingDist = 99;
+	  math::XYZTLorentzVector trkSubtractedP4;
+	  for(size_t icl=0; icl<(*eles)[ie].superCluster()->clusters().size();++icl ){
+	    const reco::BasicCluster *cl = (*eles)[ie].superCluster()->clusters()[icl].get();
+	    double clE = cl->correctedEnergy();
+	    double clP = cl->position().r();
+            math::XYZPoint clMom = clP>0 ? cl->position()*clE/clP :  math::XYZPoint();
+	    if(!(clMom.rho()>1)) continue; //MB: pt>1GeV	    
+	    //Find and then exclude cluster with best match with the cf-track extrapolated to ECAL? <2 x crystal size in eta-phi in EB (0.0174x0.0174) or in x-y in EE (2.68x2.68cm^2)?
+	    if(reachedECal){//check matching
+	      bool isBarrel = std::abs(cl->position().eta())<1.48;
+	      //iterate over cells of the cluster to find matching
+	      bool clMatched = false;
+	      for(size_t i=0;i<cl->size();++i){
+		if(clMatched) break;
+		if(cl->hitsAndFractions()[i].second < 1E-4) continue;
+		auto pos = caloGeom->getPosition(cl->hitsAndFractions()[i].first);
+		if(isBarrel){//check distance in eta-phi
+		  if(std::abs(trkPosAtEcalEntrance.eta()-pos.eta())<0.0174 &&
+		     deltaPhi(trkPosAtEcalEntrance.phi(),pos.phi())<0.0174){
+		    clMatched = true;
+		  }
+		} else {
+		  if(std::abs(trkPosAtEcalEntrance.x()-pos.x())<2.68 &&
+		     std::abs(trkPosAtEcalEntrance.y()-pos.y())<2.68){
+		    clMatched = true;
+		  }
+		}
+		if(!clMatched) continue;
+		float matchingDistTmp = isBarrel ?
+		  deltaR(trkPosAtEcalEntrance.eta(),trkPosAtEcalEntrance.phi(),
+			 cl->position().eta(),cl->position().phi()) :
+		  sqrt(std::pow(trkPosAtEcalEntrance.x()-cl->position().x(),2)+
+					       std::pow(trkPosAtEcalEntrance.y()-cl->position().y(),2));
+		if(matchingDistTmp<matchingDist){
+		  matchingDist = matchingDistTmp;
+		  matchedClIdx = icl;		    
+		  // use energy w/ subtracting (the best will be subtracting with correct calibration
+		  //calibrate E under hadron hypothesis
+		  double calibECal = clE; 
+		  double calibHCal = 0;
+		  calibration_->energyEmHad(trkMomAtEcalEntrance.energy(),
+					    calibECal,calibHCal,
+					    cl->position().eta(),
+					    cl->position().phi());;
+		  double neutralEnergy = calibECal - trkMomAtEcalEntrance.energy();
+		  double resol = neutralHadronEnergyResolution(trkMomAtEcalEntrance.energy(),cl->position().eta());
+		  resol *= trkMomAtEcalEntrance.energy();
+		  if(neutralEnergy > std::max(0.5,nSigmaECAL_*resol)){
+		    neutralEnergy /= calibECal/clE;
+		    double clSubE = neutralEnergy;
+		  //if(true){
+		    //double clSubE = clE;
+		    math::XYZPoint clSubMom = clP>0 ? cl->position()*clSubE/clP :  math::XYZPoint();
+		    trkSubtractedP4.SetXYZT(clSubMom.x(),
+					    clSubMom.y(),
+					    clSubMom.z(),
+					    clSubE);
+		  } else {
+		    trkSubtractedP4.SetXYZT(0,0,0,0);
+		  }
+		}
+	      }
+	    }
+	  }
+	  if(!(trkSubtractedP4.pt()>1)){//MB: pt>1GeV
+	    trkSubtractedP4.SetXYZT(0,0,0,0);
+	  }
+	  // ... then for one with highest Pt to be a seed
+	  int seedClIdx = matchedClIdx;
+	  math::XYZTLorentzVector seedP4 = trkSubtractedP4;
+	  for(size_t icl=0; icl<(*eles)[ie].superCluster()->clusters().size();++icl ){
+	    if((int)icl==matchedClIdx) continue; //exclude matched cluster
+	    const reco::BasicCluster *cl = (*eles)[ie].superCluster()->clusters()[icl].get();
+	    double clE = cl->correctedEnergy();
+	    double clP = cl->position().r();
+            math::XYZPoint clMom = clP>0 ? cl->position()*clE/clP :  math::XYZPoint();
+	    if(!(clMom.rho()>1)) continue; //MB: pt>1GeV	    
+	    if(clMom.rho()>seedP4.pt()){
+	      seedClIdx = icl;
+	      seedP4.SetXYZT(clMom.x(),clMom.y(),clMom.z(),clE);
+	    }
+	  }
+	  //... and finally build cluster strips.
+	  math::XYZTLorentzVector clusterStripP4 = seedP4;
+	  if(seedClIdx!=matchedClIdx) clusterStripP4 += trkSubtractedP4;
+	  double seedDEta = std::max(std::min(0.197077*std::pow(seedP4.pt(),-0.658701),0.15),0.05);
+	  double seedDPhi = std::max(std::min(0.352476*std::pow(seedP4.pt(),-0.707716),0.3),0.05);
+	  for(size_t icl=0; icl<(*eles)[ie].superCluster()->clusters().size();++icl ){
+	    if((int)icl==matchedClIdx || (int)icl==seedClIdx) continue; //exclude matched and seed clusters
+	    const reco::BasicCluster *cl = (*eles)[ie].superCluster()->clusters()[icl].get();
+	    double clE = cl->correctedEnergy();
+	    double clP = cl->position().r();
+            math::XYZPoint clMom = clP>0 ? cl->position()*clE/clP :  math::XYZPoint();
+	    if(!(clMom.rho()>1)) continue; //MB: pt>1GeV	    
+	    double dEta = seedDEta + std::max(std::min(0.197077*std::pow(clMom.rho(),-0.658701),0.15),0.05);
+	    if(std::abs(seedP4.eta()-clMom.eta())>=dEta) continue;
+	    double dPhi = seedDPhi + std::max(std::min(0.352476*std::pow(clMom.rho(),-0.707716),0.3),0.05);
+	    if(deltaPhi(seedP4.phi(),clMom.phi())>=dPhi) continue;
+	    clusterStripP4 += math::XYZTLorentzVector(clMom.x(),clMom.y(),clMom.z(),clE);
+	  }
+	  myEvent_->recoEvent_.clStripPlus_.SetXYZT(clusterStripP4.x(),
+						    clusterStripP4.y(),
+						    clusterStripP4.z(),
+						    clusterStripP4.energy());
 	}
 	//look for neutral
 	edm::Handle<edm::View<pat::PackedCandidate> >  cands;
@@ -831,7 +977,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 					     aEle->p4().e());
 	double scE = aEle->superCluster()->energy();
 	double scP = aEle->superCluster()->position().r();
-	math::XYZPoint scMom = (aEle->superCluster()->position())*scE/std::max(scP,1e-5);
+	math::XYZPoint scMom = scP>0 ? (aEle->superCluster()->position())*scE/scP : math::XYZPoint();
 	myEvent_->recoEvent_.scPlus_.SetXYZT(scMom.x(),
 					     scMom.y(),
 					     scMom.z(),
@@ -999,7 +1145,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 	  */
 	  double scE = (*eles)[ie].superCluster()->energy();
 	  double scP = (*eles)[ie].superCluster()->position().r();
-	  math::XYZPoint scMom = ((*eles)[ie].superCluster()->position())*scE/std::max(scP,1e-5);
+	  math::XYZPoint scMom = scP>0 ? ((*eles)[ie].superCluster()->position())*scE/scP : math::XYZPoint();
 	  myEvent_->recoEvent_.scMinus_.SetXYZT(scMom.x(),
 						scMom.y(),
 						scMom.z(),
@@ -1011,6 +1157,138 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 		   <<", phi="<<myEvent_->recoEvent_.scMinus_.Phi()
 		   <<std::endl;
 	  */
+	  if(!((*eles)[ie].pt()>5)) continue;
+	  //treat individual (pf)clusters as gamma cands
+	  //get track position at ECAL entrance
+	  math::XYZTLorentzVector trkMomAtVtx;
+	  const reco::Track *leadTrk = getLeadTrack(iEvent, aTau);
+	  if(leadTrk!=nullptr){
+	    trkMomAtVtx.SetXYZT(leadTrk->px(),
+				leadTrk->py(),
+				leadTrk->pz(),
+				leadTrk->p());
+	  } else {//it should not happen
+	    trkMomAtVtx.SetXYZT(aTau->leadChargedHadrCand()->px(),
+				aTau->leadChargedHadrCand()->py(),
+				aTau->leadChargedHadrCand()->pz(),
+				aTau->leadChargedHadrCand()->p());
+	  }
+	  math::XYZPoint trkPosAtEcalEntrance;
+	  math::XYZTLorentzVector trkMomAtEcalEntrance;
+	  bool reachedECal = atECalEntrance(iSetup,
+					    trkMomAtVtx,
+					    aTau->vertex(),
+					    aTau->charge(),
+					    trkPosAtEcalEntrance,
+					    trkMomAtEcalEntrance);
+
+	  //first look for a cluster matched to the track...
+	  int matchedClIdx=-1;
+	  float matchingDist = 99;
+	  math::XYZTLorentzVector trkSubtractedP4;
+	  for(size_t icl=0; icl<(*eles)[ie].superCluster()->clusters().size();++icl ){
+	    const reco::BasicCluster *cl = (*eles)[ie].superCluster()->clusters()[icl].get();
+	    double clE = cl->correctedEnergy();
+	    double clP = cl->position().r();
+            math::XYZPoint clMom = clP>0 ? cl->position()*clE/clP :  math::XYZPoint();
+	    if(!(clMom.rho()>1)) continue; //MB: pt>1GeV	    
+	    //Find and then exclude cluster with best match with the cf-track extrapolated to ECAL? <2 x crystal size in eta-phi in EB (0.0174x0.0174) or in x-y in EE (2.68x2.68cm^2)?
+	    if(reachedECal){//check matching
+	      bool isBarrel = std::abs(cl->position().eta())<1.48;
+	      //iterate over cells of the cluster to find matching
+	      bool clMatched = false;
+	      for(size_t i=0;i<cl->size();++i){
+		if(clMatched) break;
+		if(cl->hitsAndFractions()[i].second < 1E-4) continue;
+		auto pos = caloGeom->getPosition(cl->hitsAndFractions()[i].first);
+		if(isBarrel){//check distance in eta-phi
+		  if(std::abs(trkPosAtEcalEntrance.eta()-pos.eta())<0.0174 &&
+		     deltaPhi(trkPosAtEcalEntrance.phi(),pos.phi())<0.0174){
+		    clMatched = true;
+		  }
+		} else {
+		  if(std::abs(trkPosAtEcalEntrance.x()-pos.x())<2.68 &&
+		     std::abs(trkPosAtEcalEntrance.y()-pos.y())<2.68){
+		    clMatched = true;
+		  }
+		}
+		if(!clMatched) continue;
+		float matchingDistTmp = isBarrel ?
+		  deltaR(trkPosAtEcalEntrance.eta(),trkPosAtEcalEntrance.phi(),
+			 cl->position().eta(),cl->position().phi()) :
+		  sqrt(std::pow(trkPosAtEcalEntrance.x()-cl->position().x(),2)+
+					       std::pow(trkPosAtEcalEntrance.y()-cl->position().y(),2));
+		if(matchingDistTmp<matchingDist){
+		  matchingDist = matchingDistTmp;
+		  matchedClIdx = icl;		    
+		  // use energy w/ subtracting (the best will be subtracting with correct calibration
+		  //calibrate E under hadron hypothesis
+		  double calibECal = clE; 
+		  double calibHCal = 0;
+		  calibration_->energyEmHad(trkMomAtEcalEntrance.energy(),
+					    calibECal,calibHCal,
+					    cl->position().eta(),
+					    cl->position().phi());;
+		  double neutralEnergy = calibECal - trkMomAtEcalEntrance.energy();
+		  double resol = neutralHadronEnergyResolution(trkMomAtEcalEntrance.energy(),cl->position().eta());
+		  resol *= trkMomAtEcalEntrance.energy();
+		  if(neutralEnergy > std::max(0.5,nSigmaECAL_*resol)){
+		    neutralEnergy /= calibECal/clE;
+		    double clSubE = neutralEnergy;
+		  //if(true){
+		    //double clSubE = clE;
+		    math::XYZPoint clSubMom = clP>0 ? cl->position()*clSubE/clP :  math::XYZPoint();
+		    trkSubtractedP4.SetXYZT(clSubMom.x(),
+					    clSubMom.y(),
+					    clSubMom.z(),
+					    clSubE);
+		  } else {
+		    trkSubtractedP4.SetXYZT(0,0,0,0);
+		  }
+		}
+	      }
+	    }
+	  }
+	  if(!(trkSubtractedP4.pt()>1)){//MB: pt>1GeV
+	    trkSubtractedP4.SetXYZT(0,0,0,0);
+	  }
+	  // ... then for one with highest Pt to be a seed
+	  int seedClIdx = matchedClIdx;
+	  math::XYZTLorentzVector seedP4 = trkSubtractedP4;
+	  for(size_t icl=0; icl<(*eles)[ie].superCluster()->clusters().size();++icl ){
+	    if((int)icl==matchedClIdx) continue; //exclude matched cluster
+	    const reco::BasicCluster *cl = (*eles)[ie].superCluster()->clusters()[icl].get();
+	    double clE = cl->correctedEnergy();
+	    double clP = cl->position().r();
+            math::XYZPoint clMom = clP>0 ? cl->position()*clE/clP :  math::XYZPoint();
+	    if(!(clMom.rho()>1)) continue; //MB: pt>1GeV	    
+	    if(clMom.rho()>seedP4.pt()){
+	      seedClIdx = icl;
+	      seedP4.SetXYZT(clMom.x(),clMom.y(),clMom.z(),clE);
+	    }
+	  }
+	  //... and finally build cluster strips.
+	  math::XYZTLorentzVector clusterStripP4 = seedP4;
+	  if(seedClIdx!=matchedClIdx) clusterStripP4 += trkSubtractedP4;
+	  double seedDEta = std::max(std::min(0.197077*std::pow(seedP4.pt(),-0.658701),0.15),0.05);
+	  double seedDPhi = std::max(std::min(0.352476*std::pow(seedP4.pt(),-0.707716),0.3),0.05);
+	  for(size_t icl=0; icl<(*eles)[ie].superCluster()->clusters().size();++icl ){
+	    if((int)icl==matchedClIdx || (int)icl==seedClIdx) continue; //exclude matched and seed clusters
+	    const reco::BasicCluster *cl = (*eles)[ie].superCluster()->clusters()[icl].get();
+	    double clE = cl->correctedEnergy();
+	    double clP = cl->position().r();
+            math::XYZPoint clMom = clP>0 ? cl->position()*clE/clP :  math::XYZPoint();
+	    if(!(clMom.rho()>1)) continue; //MB: pt>1GeV	    
+	    double dEta = seedDEta + std::max(std::min(0.197077*std::pow(clMom.rho(),-0.658701),0.15),0.05);
+	    if(std::abs(seedP4.eta()-clMom.eta())>=dEta) continue;
+	    double dPhi = seedDPhi + std::max(std::min(0.352476*std::pow(clMom.rho(),-0.707716),0.3),0.05);
+	    if(deltaPhi(seedP4.phi(),clMom.phi())>=dPhi) continue;
+	    clusterStripP4 += math::XYZTLorentzVector(clMom.x(),clMom.y(),clMom.z(),clE);
+	  }
+	  myEvent_->recoEvent_.clStripMinus_.SetXYZT(clusterStripP4.x(),
+						     clusterStripP4.y(),
+						     clusterStripP4.z(),
+						     clusterStripP4.energy());
 	}
 	//look for neutral
 	edm::Handle<edm::View<pat::PackedCandidate> >  cands;
@@ -1091,7 +1369,7 @@ bool MiniAODVertexAnalyzer::findRecoTaus(const edm::Event & iEvent, const edm::E
 					      aEle->p4().e());
 	double scE = aEle->superCluster()->energy();
 	double scP = aEle->superCluster()->position().r();
-	math::XYZPoint scMom = (aEle->superCluster()->position())*scE/std::max(scP,1e-5);
+	math::XYZPoint scMom = scP>0 ? (aEle->superCluster()->position())*scE/scP : math::XYZPoint();
 	myEvent_->recoEvent_.scMinus_.SetXYZT(scMom.x(),
 					      scMom.y(),
 					      scMom.z(),
@@ -1761,6 +2039,49 @@ void MiniAODVertexAnalyzer::initializeTauSpinner(){
   Tauolapp::Tauola::initialize();
   LHAPDF::initPDFSetByName(TauSpinnerSettingsPDF_);
   TauSpinner::initialize_spinner(Ipp_, Ipol_, nonSM2_, nonSMN_,  CMSENE_);
+}
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+bool MiniAODVertexAnalyzer::atECalEntrance(const edm::EventSetup &iSetup,
+					   const math::XYZTLorentzVector &momAtVtx,
+					   const math::XYZPoint &vtx,
+					   const int &charge,
+					   math::XYZPoint &pos,
+					   math::XYZTLorentzVector &mom){
+
+  edm::ESHandle<MagneticField> magneticField;
+  iSetup.get<IdealMagneticFieldRecord>().get(magneticField);
+  math::XYZVector bField(magneticField->inTesla(GlobalPoint(0,0,0)));
+  BaseParticlePropagator theParticle =
+    BaseParticlePropagator(RawParticle(momAtVtx,
+                                       math::XYZTLorentzVector(vtx.x(),
+                                                               vtx.y(),
+                                                               vtx.z(),
+                                                               0.)),
+                           0.,0.,bField.z());
+  theParticle.setCharge(charge);
+
+  theParticle.propagateToEcalEntrance(false);
+
+  if(theParticle.getSuccess()!=0){
+    pos = math::XYZPoint(theParticle.vertex());
+    mom = math::XYZTLorentzVector(theParticle.momentum());
+    return true;
+  }
+
+  return false;
+}
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/*copied from RecoParticleFlow/PFProducer/src/PFAlgo.cc */
+double MiniAODVertexAnalyzer::neutralHadronEnergyResolution(const double &clusterEnergyHCAL, const double & eta) const {
+
+  double resol =  std::abs(eta) < 1.48 ? 
+    sqrt(1.02*1.02/std::max(clusterEnergyHCAL,1.) + 0.065*0.065) :
+    sqrt(1.20*1.20/std::max(clusterEnergyHCAL,1.) + 0.028*0.028);
+
+  return resol;
 }
 
 /////////////////////////////////////////////////////////////////

@@ -22,6 +22,9 @@
   <use   name="RecoVertex/VertexPrimitives"/>
   <use   name="RecoVertex/AdaptiveVertexFit"/>  
   <use   name="SimDataFormats/GeneratorProducts"/>
+  <use   name="FastSimulation/BaseParticlePropagator"/>
+  <use   name="FastSimulation/Particle"/>
+  <use   name="RecoParticleFlow/PFClusterTools"/>
   <use   name="root"/>
 
   <use name="tauolapp"/>

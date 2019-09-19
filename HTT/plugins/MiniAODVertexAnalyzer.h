@@ -36,6 +36,8 @@
 #include "WarsawAnalysis/HTTDataFormats/interface/HTTEvent.h"
 #include "TauSpinner/SimpleParticle.h"
 
+#include "RecoParticleFlow/PFClusterTools/interface/PFEnergyCalibration.h"
+
 #include "TTree.h"
 #include "TLorentzVector.h"
 #include "TVector3.h"
@@ -141,6 +143,22 @@ class MiniAODVertexAnalyzer : public edm::EDAnalyzer {
     //Helper functions for TauSpinner
     TauSpinner::SimpleParticle convertToSimplePart(const reco::GenParticle& aPart);
     void initializeTauSpinner();
+
+    //extrapolate track to ECal
+    bool atECalEntrance(const edm::EventSetup &iSetup,
+			const math::XYZTLorentzVector &momAtVtx,
+			const math::XYZPoint &vtx,
+			const int &charge,
+			math::XYZPoint &pos,
+			math::XYZTLorentzVector &mom);
+
+
+    std::unique_ptr<PFEnergyCalibration> calibration_;
+    double neutralHadronEnergyResolution(const double &clusterEnergy,
+					 const double &clusterEta) const;
+
+    float nSigmaECAL_;
+    
 };
 
 #endif

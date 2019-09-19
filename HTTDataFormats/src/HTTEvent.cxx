@@ -73,6 +73,8 @@ void DiTauData::clear(){
   trkPlus_ = TLorentzVector();
   scMinus_ = TLorentzVector();
   scPlus_ = TLorentzVector();
+  clStripMinus_ = TLorentzVector();
+  clStripPlus_ = TLorentzVector();
   neutralMinus_ = TLorentzVector();
   neutralPlus_ = TLorentzVector();
   tauMinus_ = TLorentzVector();
